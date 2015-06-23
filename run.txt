@@ -1,0 +1,2 @@
+haxe -main Index -cs tst -net-lib ./GitSharp.dll -net-lib ./GitSharp.Core.dll -net-lib ./Tamir.SharpSSH.dll -net-lib ./ICSharpCode.SharpZipLib.dll -net-lib ./DiffieHellman.dll -net-lib ./Org.Mentalis.Security.dll
+mono ./tst/bin/Index.exe
