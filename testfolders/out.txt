@@ -1,0 +1,22 @@
+Index.hx:27: file
+Index.hx:31: file -> ./build.hxml
+Index.hx:27: file
+Index.hx:31: file -> ./Index.hx
+Index.hx:27: file
+Index.hx:31: file -> ./Index.n
+Index.hx:27: file
+Index.hx:31: file -> ./out.txt
+Index.hx:24: sub ./rtl.jsapi
+Index.hx:24: sub ./rtl.jsapi/0.1
+Index.hx:24: sub ./rtl.jsapi/0.1/debug
+Index.hx:27: file
+Index.hx:31: file -> ./rtl.jsapi/0.1/debug/rtl.jsapi.js
+Index.hx:27: file
+Index.hx:31: file -> ./rtl.jsapi/0.1/rtl.jsapi.min.js
+Index.hx:24: sub ./rtl.jsapi/0.2
+Index.hx:24: sub ./rtl.jsapi/0.2/debug
+Index.hx:27: file
+Index.hx:31: file -> ./rtl.jsapi/0.2/debug/rtl.jsapi.js
+Index.hx:27: file
+Index.hx:31: file -> ./rtl.jsapi/0.2/rtl.jsapi.min.js
+Index.hx:37: ""
