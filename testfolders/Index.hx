@@ -1,5 +1,6 @@
 package;
 import haxe.web.Dispatch;
+import cs.NativeArray;
 /**
  * https://gist.github.com/textarcana/1306223 
  */
@@ -25,17 +26,26 @@ class Index
       }
       return fsubfolder == false ? sys.FileSystem.readDirectory(folder) : retval ;
     }
-		var s:String = untyped __cs__("GitSharp.Repository.FindRepository(\"/Users/tecteun/work/svn-checkouts/rtl_dash\")");
+		var s:String = untyped __cs__("GitSharp.Repository.FindRepository(\".\")");
 		trace(untyped __cs__("GitSharp.Repository.IsValid(s)"));
 		var repo = untyped __cs__("new GitSharp.Repository(s)");
+
 		trace(untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")"));
-		var branch = (untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")"));
-		var leaves:Array<Dynamic<{Path:String}>> = (branch.CurrentCommit.Tree.Leaves);
-		for(l in leaves){
-			trace(l);
+		var branch:Dynamic = (untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")")); //GitSharp.Branch
+		//trace(branch.Fullname);
+		//var leaves:Iterator<Dynamic>= cast(branch.CurrentCommit.Tree.Leaves.Cast<());
+		
+		for(leaf in cs.Lib.array(branch.CurrentCommit.Tree.Leaves)){
+			trace(leaf.Path);
+			trace(leaf.Data);
+			
 		}
 		
+		
 	}
-	
+}
+
+
+class Branch {
 	
 }

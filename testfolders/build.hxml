@@ -1,2 +1,4 @@
+-cs output
 -main Index
--neko Index.n
+-net-lib GitSharp.dll 
+-net-lib GitSharp.Core.dll
