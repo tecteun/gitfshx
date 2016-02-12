@@ -1,4 +1,0 @@
-/Users/tecteun/Desktop/testfolders/tst/bin/Release/Index.exe.mdb
-/Users/tecteun/Desktop/testfolders/tst/bin/Release/Index.exe
-/Users/tecteun/Desktop/testfolders/tst/obj/x86/Release/Index.exe
-/Users/tecteun/Desktop/testfolders/tst/obj/x86/Release/Index.exe.mdb
