@@ -17,7 +17,6 @@ class Index
 	 */
 	static function main() 
 	{
-		trace(haxe.net.WebSocketUtil);
     var parseFolder:String->Dynamic = null;
     parseFolder = function(folder:String){
       folder = haxe.io.Path.addTrailingSlash(folder);
@@ -90,14 +89,14 @@ class Index
 			
 		}
 		*/
-	trace("serv");
+		trace("serv");
 		_listener = untyped __cs__("new System.Net.HttpListener()");
 		_listener.Prefixes.Add("http://*:1234/");
 	    _listener.Start();
-		 _listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
-	while(true){
-		
-	}
+		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
+		while(true){
+			
+		}
 	}
 	
 	//http://mikehadlow.blogspot.no/2006/07/playing-with-httpsys.html
