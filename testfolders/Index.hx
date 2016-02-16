@@ -17,6 +17,9 @@ class Index
 	 */
 	static function main() 
 	{
+		cs.system.Console.set_BackgroundColor(cs.system.ConsoleColor.Green);
+		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
+		
     var parseFolder:String->Dynamic = null;
     parseFolder = function(folder:String){
       folder = haxe.io.Path.addTrailingSlash(folder);
