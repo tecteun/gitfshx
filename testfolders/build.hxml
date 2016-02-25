@@ -3,3 +3,4 @@
 -main Index
 -net-lib GitSharp.dll 
 -net-lib GitSharp.Core.dll
+-resource index_template.html@filetemplate

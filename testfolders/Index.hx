@@ -4,6 +4,7 @@ import cs.system.net.HttpListenerContext;
 
 /**
  * https://gist.github.com/textarcana/1306223 
+ * https://github.com/henon/GitSharp/
  */
 //@:CsNative("using Microsoft.AspNet.Builder")
 //@:CsNative("using System.Net")
@@ -109,9 +110,10 @@ class Index
 		_listener.Stop();
 	}
 	
-	private static function GetBranchKeys(){
-		var retval:Array<String> = new Array<String>();
-		var enumerator:cs.system.collections.IEnumerator = repo.Branches.Keys.GetEnumerator();
+	private static function GetBranches(){
+		var retval:Array<Dynamic> = new Array<String>();
+		var enumerator:cs.system.collections.IEnumerator = repo.Branches.Values.GetEnumerator();
+
 		while(enumerator.MoveNext()){
 			retval.push(enumerator.Current);
 		}
@@ -128,6 +130,20 @@ class Index
 		trace(p.backslash);
 		trace(p.file);
 		
+		
+		var t = new haxe.Template(haxe.Resource.getString("filetemplate"));
+		var output = "";
+		var branches:Array<Dynamic> = new Array<Dynamic>();
+		
+		var count = 0;
+		for(branch in GetBranches()){
+			branches.push({count: count++, name: branch, lastmodified: branch.CurrentCommit.AuthorDate});
+		}
+		try{
+			output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
+		}catch(e:Dynamic){trace(e);}
+		
+		
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
 		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
@@ -142,11 +158,10 @@ class Index
             buf.add('Query:      ${enumerator.Current} = ${ request.QueryString.Get(enumerator.Current)}\n');
 
         }
-		buf.add(GetBranchKeys());
+		buf.add(GetBranches());
 		
         buf.add("");
-		var retval = buf.toString();
-		var buffer = cs.system.text.Encoding.UTF8.GetBytes(buf.toString());
+		var buffer = cs.system.text.Encoding.UTF8.GetBytes(output.toString());
 		if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
 			var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
 			var zip = new cs.system.io.compression.GZipStream(ms, cs.system.io.compression.CompressionMode.Compress);
