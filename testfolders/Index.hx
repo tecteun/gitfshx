@@ -1,6 +1,6 @@
 package;
 import haxe.web.Dispatch;
-import cs.NativeArray;
+import cs.system.net.HttpListenerContext;
 
 /**
  * https://gist.github.com/textarcana/1306223 
@@ -19,7 +19,7 @@ class Index
 	{
 		cs.system.Console.set_BackgroundColor(cs.system.ConsoleColor.Green);
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
-		
+	/*	
     var parseFolder:String->Dynamic = null;
     parseFolder = function(folder:String){
       folder = haxe.io.Path.addTrailingSlash(folder);
@@ -33,10 +33,17 @@ class Index
       }
       return fsubfolder == false ? sys.FileSystem.readDirectory(folder) : retval ;
     }
+	*/
+
+
 		var s:String = untyped __cs__("GitSharp.Repository.FindRepository(\".\")");
 		trace(untyped __cs__("GitSharp.Repository.IsValid(s)"));
 		var repo = untyped __cs__("new GitSharp.Repository(s)");
-
+		var enumerator:cs.system.collections.IEnumerator = repo.Branches.Keys.GetEnumerator();
+		while(enumerator.MoveNext()){
+			trace(enumerator.Current);
+		}
+		
 		trace(untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")"));
 		var branch:Dynamic = (untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")")); //GitSharp.Branch
 		//trace(branch.Fullname);
@@ -92,28 +99,57 @@ class Index
 			
 		}
 		*/
-		trace("serv");
+		trace("Gixen webservice starting. press any key to quit.");
 		_listener = untyped __cs__("new System.Net.HttpListener()");
 		_listener.Prefixes.Add("http://*:1234/");
 	    _listener.Start();
 		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
-		while(true){
-			
-		}
+		cs.system.Console.ReadLine();
+		_listener.Stop();
 	}
 	
 	//http://mikehadlow.blogspot.no/2006/07/playing-with-httpsys.html
 	private static function GetContextCallback(result:cs.system.IAsyncResult):Void{
-		var context = _listener.EndGetContext(result);
-		trace(context.Request);
-		trace(context.Response);
-		trace(context.Request.Url.AbsoluteUri);
+		var context:HttpListenerContext = _listener.EndGetContext(result);
+		var request = context.Request;
+		var response = context.Response;
+		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
+		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
+		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
+		var buf = new StringBuf();
+		buf.add("");
+        buf.add('HttpMethod: ${request.HttpMethod}\n');
+        buf.add('Uri: ${request.Url.AbsoluteUri}\n');
+        buf.add('LocalPath: ${request.Url.LocalPath}\n');
+    	var enumerator:cs.system.collections.IEnumerator = request.QueryString.Keys.GetEnumerator();
+        while(enumerator.MoveNext()){
+			
+            buf.add('Query:      ${enumerator.Current} = ${ request.QueryString.Get(enumerator.Current)}\n');
+
+        }
+		
+        buf.add("");
+		var retval = buf.toString();
+		var buffer = cs.system.text.Encoding.UTF8.GetBytes(buf.toString());
+		if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
+			var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
+			var zip = new cs.system.io.compression.GZipStream(ms, cs.system.io.compression.CompressionMode.Compress);
+			zip.Write(buffer, 0, buffer.Length);
+			zip.Close();
+			var oldSize= buffer.Length;
+			
+			//set new buffer to compressed stream
+			buffer = ms.ToArray();
+			
+			var perc = Math.round(((buffer.Length - oldSize) / oldSize) * 100);
+			trace('write compressed stream $oldSize->${buffer.Length} $perc% reduction of bytes');
+			response.AddHeader("Content-Encoding", "gzip");
+		}
+		
+		response.AppendHeader("Server", "Gixen/Mono | v0.1");
+		response.ContentLength64 = buffer.Length;
+		response.OutputStream.Write(buffer, 0, buffer.Length);		
 		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
 	}
-	
-}
-
-
-class Branch {
 	
 }
