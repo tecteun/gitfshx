@@ -11,6 +11,7 @@ import cs.system.net.HttpListenerContext;
 //@:classCode("using System.Linq;\n")
 class Index
 {
+	private static var repo:Dynamic;
 	static var _listener;
 	/**
 	 * Required main starting point of our application.
@@ -38,7 +39,7 @@ class Index
 
 		var s:String = untyped __cs__("GitSharp.Repository.FindRepository(\".\")");
 		trace(untyped __cs__("GitSharp.Repository.IsValid(s)"));
-		var repo = untyped __cs__("new GitSharp.Repository(s)");
+		repo = untyped __cs__("new GitSharp.Repository(s)");
 		var enumerator:cs.system.collections.IEnumerator = repo.Branches.Keys.GetEnumerator();
 		while(enumerator.MoveNext()){
 			trace(enumerator.Current);
@@ -108,11 +109,25 @@ class Index
 		_listener.Stop();
 	}
 	
+	private static function GetBranchKeys(){
+		var retval:Array<String> = new Array<String>();
+		var enumerator:cs.system.collections.IEnumerator = repo.Branches.Keys.GetEnumerator();
+		while(enumerator.MoveNext()){
+			retval.push(enumerator.Current);
+		}
+		return retval;
+	}
+	
 	//http://mikehadlow.blogspot.no/2006/07/playing-with-httpsys.html
 	private static function GetContextCallback(result:cs.system.IAsyncResult):Void{
 		var context:HttpListenerContext = _listener.EndGetContext(result);
 		var request = context.Request;
 		var response = context.Response;
+		var p = new haxe.io.Path(request.Url.LocalPath);
+		trace(p.dir);
+		trace(p.backslash);
+		trace(p.file);
+		
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
 		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
@@ -127,6 +142,7 @@ class Index
             buf.add('Query:      ${enumerator.Current} = ${ request.QueryString.Get(enumerator.Current)}\n');
 
         }
+		buf.add(GetBranchKeys());
 		
         buf.add("");
 		var retval = buf.toString();
