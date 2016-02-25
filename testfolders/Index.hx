@@ -51,11 +51,19 @@ class Index
 		//trace(branch.Fullname);
 		//var leaves:Iterator<Dynamic>= cast(branch.CurrentCommit.Tree.Leaves.Cast<());
 		trace(branch.CurrentCommit.ShortHash);
+		trace(branch.CurrentCommit.ShortHash);
+		
+		//branch.CurrentCommit.Tree; //upper level tree
+		//branch.CurrentCommit.Tree.Trees; //sub level level tree
+		
 		for(tree in cs.Lib.array(branch.CurrentCommit.Tree.Trees)){
+		
+			trace(cs.Lib.array(tree.Leaves).length);
 			//var enumerable:cs.system.collections.IEnumerator = tree.GetHistory();
 			//trace(enumerable);
 			//trace(tree.GetHistory().ToArray());
 			for(leaf in cs.Lib.array(tree.Leaves)){
+				trace(leaf.Path);
 				//trace(" aap");//https://github.com/henon/GitSharp/blob/4cef5fe76e80cfb457abb7d5f9d8c5040affa4c5/GitSharp/AbstractTreeNode.cs
 				if(leaf.Path == "testfolders/build.hxml"){
 					var ienumerable:cs.system.collections.IEnumerable = leaf.GetHistory();
@@ -110,8 +118,8 @@ class Index
 		_listener.Stop();
 	}
 	
-	private static function GetBranches(){
-		var retval:Array<Dynamic> = new Array<String>();
+	private static function GetBranches():Array<Dynamic>{
+		var retval:Array<Dynamic> = new Array<Dynamic>();
 		var enumerator:cs.system.collections.IEnumerator = repo.Branches.Values.GetEnumerator();
 
 		while(enumerator.MoveNext()){
@@ -119,6 +127,14 @@ class Index
 		}
 		return retval;
 	}
+	
+	private static function GetLeaves(branchKey:String){
+		//var branch:Dynamic = (untyped __cs__('new GitSharp.Repository(s).Get<GitSharp.Branch>("$branchKey")')); //GitSharp.Branch
+		
+		
+	}
+	
+	///refs/heads
 	
 	//http://mikehadlow.blogspot.no/2006/07/playing-with-httpsys.html
 	//TODO: chunked responses?

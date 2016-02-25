@@ -53,6 +53,7 @@
             ::end::
         </ol>
 
+        <!-- branches -->
         <div class="panel panel-default">
             <!-- Default panel contents -->
             <div class="panel-heading">::type::</div>
@@ -70,7 +71,7 @@
                     ::foreach branches::
                     <tr>
                         <th scope="row">::count::</th>
-                        <td>::name::</td>
+                        <td><a href="/::name.Fullname::">::name::</a></td>
                         <td>::lastmodified::</td>
                     </tr>
                     ::end::                    
