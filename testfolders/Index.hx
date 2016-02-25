@@ -121,6 +121,7 @@ class Index
 	}
 	
 	//http://mikehadlow.blogspot.no/2006/07/playing-with-httpsys.html
+	//TODO: chunked responses?
 	private static function GetContextCallback(result:cs.system.IAsyncResult):Void{
 		var context:HttpListenerContext = _listener.EndGetContext(result);
 		var request = context.Request;
