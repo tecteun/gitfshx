@@ -151,6 +151,8 @@ class Index
 		trace(p.backslash);
 		trace(p.file);
 		
+		//var leaf:Dynamic = (untyped __cs__("global::Index.repo.Get<GitSharp.Leaf>('a')")); //GitSharp.Branch
+		//trace(leaf);
 		if(p.dir == "/refs/heads"){
 			var branch = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(p.file);
 			
