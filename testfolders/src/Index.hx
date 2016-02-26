@@ -55,7 +55,7 @@ class Index
 		//var leaves:Iterator<Dynamic>= cast(branch.CurrentCommit.Tree.Leaves.Cast<());
 		trace(branch.CurrentCommit.ShortHash);
 		trace(branch.CurrentCommit.ShortHash);
-		GitHelper.parseTree(branch);
+		//GitHelper.parseTree(branch);
 		
 		//branch.CurrentCommit.Tree; //upper level tree
 		//branch.CurrentCommit.Tree.Trees; //sub level level tree
@@ -149,6 +149,21 @@ class Index
 		trace(p.dir);
 		trace(p.backslash);
 		trace(p.file);
+		
+		if(p.dir == "/refs/heads"){
+			var branch = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(p.file);
+			if(null != branch){
+				//https://github.com/HaxeFoundation/haxe/issues/1903
+				var ts : cs.system.threading.ThreadStart = function(){ GitHelper.parseTree(branch); };
+				var thread1 = new cs.system.threading.Thread(ts);
+				thread1.Start();	
+				thread1.Join();
+				trace("done");			
+			}else{
+				trace('branch ${p.file} not found');
+			}
+		}
+		
 		
 		
 		var t = new haxe.Template(haxe.Resource.getString("branch_template"));
