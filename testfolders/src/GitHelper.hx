@@ -1,6 +1,7 @@
 typedef FileTree = {
-    file:String
-    
+    file:String,
+    mime:String, //detected mime type
+    last_commit:Dynamic
 }
 
 class GitHelper{
@@ -12,6 +13,13 @@ class GitHelper{
             for(leaf in cs.Lib.array(tree.Leaves)){
                 trace('Folder[${tree.Path}] ${leaf.Path}');
                 trace(Util.getMimeType(leaf.Path));
+                var last_commit = leaf.GetLastCommit(); //heavy function call;
+                trace(last_commit.CommitDate);
+                retval.push({   
+                                file:leaf.Path, 
+                                mime:Util.getMimeType(leaf.Path),
+                                last_commit: last_commit
+                            });
             }
         }
         
@@ -26,7 +34,11 @@ class GitHelper{
             }
         }
         
+        //start parsing at lowest level tree
         subTree(branch.CurrentCommit.Tree);
+        
+        
+        
         /*
         for(tree in cs.Lib.array(branch.CurrentCommit.Tree.Trees)){
 		

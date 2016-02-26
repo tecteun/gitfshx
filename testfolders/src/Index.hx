@@ -54,7 +54,7 @@ class Index
 		trace(branch.CurrentCommit.ShortHash);
 		trace(branch.CurrentCommit.ShortHash);
 		GitHelper.parseTree(branch);
-		return;
+		
 		//branch.CurrentCommit.Tree; //upper level tree
 		//branch.CurrentCommit.Tree.Trees; //sub level level tree
 		
