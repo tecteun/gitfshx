@@ -1,6 +1,10 @@
 #-lib wtri
 -cs output
+-cp src
 -main Index
+#include dependant libs
 -net-lib GitSharp.dll 
 -net-lib GitSharp.Core.dll
--resource index_template.html@filetemplate
+#include templates
+-resource templates/branch_template.html@branch_template
+-resource templates/index_template.html@index_template

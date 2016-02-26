@@ -149,7 +149,7 @@ class Index
 		trace(p.file);
 		
 		
-		var t = new haxe.Template(haxe.Resource.getString("filetemplate"));
+		var t = new haxe.Template(haxe.Resource.getString("branch_template"));
 		var output = "";
 		var branches:Array<Dynamic> = new Array<Dynamic>();
 		
