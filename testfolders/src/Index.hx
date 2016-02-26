@@ -19,6 +19,8 @@ class Index
 	 */
 	static function main() 
 	{
+		cs.system.Console.set_BackgroundColor(cs.system.ConsoleColor.Red);
+		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
 		trace(Macros.GetGitShortHead());
 		cs.system.Console.set_BackgroundColor(cs.system.ConsoleColor.Green);
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);

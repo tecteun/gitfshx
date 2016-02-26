@@ -1,7 +1,8 @@
 typedef FileTree = {
     file:String,
     mime:String, //detected mime type
-    last_commit:Dynamic
+    last_commit:Dynamic,
+    sha256:String
 }
 
 class GitHelper{
@@ -14,11 +15,14 @@ class GitHelper{
                 trace('Folder[${tree.Path}] ${leaf.Path}');
                 trace(Util.getMimeType(leaf.Path));
                 var last_commit = leaf.GetLastCommit(); //heavy function call; //https://github.com/henon/GitSharp/blob/master/GitSharp/AbstractTreeNode.cs
+                var sha256 = "sha256-" + haxe.crypto.Sha256.encode(leaf.Data);
                 trace(last_commit.CommitDate);
+                trace(sha256);
                 retval.push({   
                                 file:leaf.Path, 
                                 mime:Util.getMimeType(leaf.Path),
-                                last_commit: last_commit
+                                last_commit: last_commit,
+                                sha256: sha256 //integrity https://www.w3.org/TR/SRI/
                             });
             }
         }
