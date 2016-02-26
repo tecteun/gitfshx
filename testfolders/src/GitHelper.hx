@@ -16,7 +16,7 @@ class GitHelper{
                 trace(Util.getMimeType(leaf.Path));
                 var last_commit = leaf.GetLastCommit(); //heavy function call; //https://github.com/henon/GitSharp/blob/master/GitSharp/AbstractTreeNode.cs
                 var sha256 = "sha256-" + haxe.crypto.Sha256.encode(leaf.Data);
-                trace(last_commit.CommitDate);
+                //trace(last_commit.CommitDate);
                 trace(sha256);
                 retval.push({   
                                 file:leaf.Path, 

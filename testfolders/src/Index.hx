@@ -145,6 +145,7 @@ class Index
 		var context:HttpListenerContext = _listener.EndGetContext(result);
 		var request = context.Request;
 		var response = context.Response;
+		var output = "";
 		var p = new haxe.io.Path(request.Url.LocalPath);
 		trace(p.dir);
 		trace(p.backslash);
@@ -152,50 +153,61 @@ class Index
 		
 		if(p.dir == "/refs/heads"){
 			var branch = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(p.file);
+			
 			if(null != branch){
 				//https://github.com/HaxeFoundation/haxe/issues/1903
+				/*
 				var ts : cs.system.threading.ThreadStart = function(){ GitHelper.parseTree(branch); };
 				var thread1 = new cs.system.threading.Thread(ts);
 				thread1.Start();	
 				thread1.Join();
+				*/
+				try{
+					var t = new haxe.Template(haxe.Resource.getString("index_template"));
+					var obj = GitHelper.parseTree(branch);
+					trace(obj);
+					
+					output = t.execute(obj);
+				}catch(e:Dynamic){ trace(e); };
 				trace("done");			
 			}else{
 				trace('branch ${p.file} not found');
+				output = "not found that branch bitch!";
 			}
-		}
-		
-		
-		
-		var t = new haxe.Template(haxe.Resource.getString("branch_template"));
-		var output = "";
-		var branches:Array<Dynamic> = new Array<Dynamic>();
-		
-		var count = 0;
-		for(branch in GetBranches()){
-			branches.push({count: count++, name: branch, lastmodified: branch.CurrentCommit.AuthorDate});
-		}
-		try{
-			output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
-		}catch(e:Dynamic){trace(e);}
-		
-		
-		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
-		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
-		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
-		var buf = new StringBuf();
-		buf.add("");
-        buf.add('HttpMethod: ${request.HttpMethod}\n');
-        buf.add('Uri: ${request.Url.AbsoluteUri}\n');
-        buf.add('LocalPath: ${request.Url.LocalPath}\n');
-    	var enumerator:cs.system.collections.IEnumerator = request.QueryString.Keys.GetEnumerator();
-        while(enumerator.MoveNext()){
+		}else{
 			
-            buf.add('Query:      ${enumerator.Current} = ${ request.QueryString.Get(enumerator.Current)}\n');
+			var t = new haxe.Template(haxe.Resource.getString("branch_template"));
+			
+			var branches:Array<Dynamic> = new Array<Dynamic>();
+			
+			var count = 0;
+			for(branch in GetBranches()){
+				branches.push({count: count++, name: branch, lastmodified: branch.CurrentCommit.AuthorDate});
+			}
+			try{
+				output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
+			}catch(e:Dynamic){trace(e);}
+			
+			
+			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
+			trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
+			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
+			var buf = new StringBuf();
+			buf.add("");
+	        buf.add('HttpMethod: ${request.HttpMethod}\n');
+	        buf.add('Uri: ${request.Url.AbsoluteUri}\n');
+	        buf.add('LocalPath: ${request.Url.LocalPath}\n');
+	    	var enumerator:cs.system.collections.IEnumerator = request.QueryString.Keys.GetEnumerator();
+	        while(enumerator.MoveNext()){
+				
+	            buf.add('Query:      ${enumerator.Current} = ${ request.QueryString.Get(enumerator.Current)}\n');
 
-        }
-		buf.add(GetBranches());
+	        }
+			buf.add(GetBranches());
+	        buf.add("");
+		}
+		trace("aap");
 		
-        buf.add("");
 		var buffer = cs.system.text.Encoding.UTF8.GetBytes(output.toString());
 		if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
 			var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
