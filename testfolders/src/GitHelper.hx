@@ -13,7 +13,7 @@ class GitHelper{
             for(leaf in cs.Lib.array(tree.Leaves)){
                 trace('Folder[${tree.Path}] ${leaf.Path}');
                 trace(Util.getMimeType(leaf.Path));
-                var last_commit = leaf.GetLastCommit(); //heavy function call;
+                var last_commit = leaf.GetLastCommit(); //heavy function call; //https://github.com/henon/GitSharp/blob/master/GitSharp/AbstractTreeNode.cs
                 trace(last_commit.CommitDate);
                 retval.push({   
                                 file:leaf.Path, 
