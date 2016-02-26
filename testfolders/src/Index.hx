@@ -53,13 +53,14 @@ class Index
 		//var leaves:Iterator<Dynamic>= cast(branch.CurrentCommit.Tree.Leaves.Cast<());
 		trace(branch.CurrentCommit.ShortHash);
 		trace(branch.CurrentCommit.ShortHash);
-		
+		GitHelper.parseTree(branch);
+		return;
 		//branch.CurrentCommit.Tree; //upper level tree
 		//branch.CurrentCommit.Tree.Trees; //sub level level tree
 		
 		for(tree in cs.Lib.array(branch.CurrentCommit.Tree.Trees)){
 		
-			trace(cs.Lib.array(tree.Leaves).length);
+			trace("path: " + tree.Path + " contains " + cs.Lib.array(tree.Leaves).length + " leaves");
 			//var enumerable:cs.system.collections.IEnumerator = tree.GetHistory();
 			//trace(enumerable);
 			//trace(tree.GetHistory().ToArray());

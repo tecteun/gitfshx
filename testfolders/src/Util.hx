@@ -59,6 +59,12 @@ class Util {
 		return output.getBytes();
 	}
     
+    public static function getMimeType(file:String):String{
+        var p = new haxe.io.Path(file).ext;
+        return Reflect.hasField(Util.mimes, p) ? Reflect.field(Util.mimes, p) : "application/octet-stream";
+        //return (untyped __cs__("System.Web.MimeMapping.GetMimeMapping("file")")); 		
+    }
+    
     public static var mimes:Dynamic = 
 	{	"ai": "application/postscript",
 	    "aif": "audio/x-aiff",
