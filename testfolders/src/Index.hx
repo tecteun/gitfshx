@@ -65,8 +65,6 @@ class Index
 			//trace(enumerable);
 			//trace(tree.GetHistory().ToArray());
 			for(leaf in cs.Lib.array(tree.Leaves)){
-				trace(leaf.Path);
-				trace(getMimeType(leaf.Path));
 				//trace(" aap");//https://github.com/henon/GitSharp/blob/4cef5fe76e80cfb457abb7d5f9d8c5040affa4c5/GitSharp/AbstractTreeNode.cs
 				if(leaf.Path == "testfolders/build.hxml"){
 					var ienumerable:cs.system.collections.IEnumerable = leaf.GetHistory();
@@ -203,12 +201,7 @@ class Index
 		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
 	}
 	
-	private static function getMimeType(file:String):String{
-		var p = new haxe.io.Path(file).ext;
-		return Reflect.hasField(Util.mimes, p) ? Reflect.field(Util.mimes, p) : "application/octet-stream";
-		//return (untyped __cs__("System.Web.MimeMapping.GetMimeMapping("file")")); 		
-	}
-	
+
 	
 	
 	
