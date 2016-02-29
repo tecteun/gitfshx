@@ -2,6 +2,7 @@ package;
 import haxe.web.Dispatch;
 import cs.system.net.HttpListenerContext;
 import macros.Macros;
+import cs.StdTypes;
 /**
  * https://gist.github.com/textarcana/1306223 
  * https://github.com/henon/GitSharp/
@@ -13,7 +14,7 @@ import macros.Macros;
 class Index
 {
 	private static var repo:Dynamic;
-	static var _listener;
+	static var _listener:cs.system.net.HttpListener;
 	/**
 	 * Required main starting point of our application.
 	 */
@@ -112,13 +113,24 @@ class Index
 			
 		}
 		*/
+	
 		trace("Gixen webservice starting. press any key to quit.");
-		_listener = untyped __cs__("new System.Net.HttpListener()");
+		_listener = new cs.system.net.HttpListener();
 		_listener.Prefixes.Add("http://*:1234/");
 	    _listener.Start();
 		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
 		cs.system.Console.ReadLine();
 		_listener.Stop();
+	}
+	
+	private static function GetTags():Array<Dynamic>{
+		var retval:Array<Dynamic> = new Array<Dynamic>();
+		var enumerator:cs.system.collections.IEnumerator = repo.Tags.Values.GetEnumerator();
+
+		while(enumerator.MoveNext()){
+			retval.push(enumerator.Current);
+		}
+		return retval;
 	}
 	
 	private static function GetBranches():Array<Dynamic>{
@@ -141,8 +153,8 @@ class Index
 	
 	//http://mikehadlow.blogspot.no/2006/07/playing-with-httpsys.html
 	//TODO: chunked responses?
-	private static function GetContextCallback(result:cs.system.IAsyncResult):Void{
-		var context:HttpListenerContext = _listener.EndGetContext(result);
+	private static function GetContextCallback(async_result:cs.system.IAsyncResult):Void{
+		var context:HttpListenerContext = _listener.EndGetContext(async_result);
 		var request = context.Request;
 		var response = context.Response;
 		var output = "";
@@ -172,7 +184,9 @@ class Index
 			
 			try{
 				var leaf:Dynamic = untyped __cs__("(branch as GitSharp.Branch).CurrentCommit.Tree[repofilepath];"); //these array accessors cannot work with haxe?
-				trace(leaf.Data);				
+				
+				handleResponseString(leaf.Data, context);		
+				return;
 			}catch(e:Dynamic){
 				trace(e);
 			};
@@ -207,6 +221,9 @@ class Index
 			for(branch in GetBranches()){
 				branches.push({count: count++, name: branch, lastmodified: branch.CurrentCommit.AuthorDate});
 			}
+			for(tag in GetTags()){
+				branches.push({count: count++, name: tag, lastmodified: tag.CurrentCommit.AuthorDate});
+			}
 			try{
 				output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
 			}catch(e:Dynamic){trace(e);}
@@ -229,9 +246,16 @@ class Index
 			buf.add(GetBranches());
 	        buf.add("");
 		}
-		trace("aap");
-		
-		var buffer = cs.system.text.Encoding.UTF8.GetBytes(output.toString());
+			
+		handleResponseString(output, context);
+	}
+	
+	private static function handleResponseString(output:String, context:HttpListenerContext, ?UTF8:Bool = true){
+		handleResponse(UTF8 ? cs.system.text.Encoding.UTF8.GetBytes(output) : haxe.io.Bytes.ofString(output).getData(), context);
+	}
+	
+	private static function handleResponse(buffer:cs.NativeArray<UInt8>, context:HttpListenerContext):Void {
+		var response = context.Response, request = context.Request;
 		if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
 			var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
 			var zip = new cs.system.io.compression.GZipStream(ms, cs.system.io.compression.CompressionMode.Compress);
@@ -249,8 +273,10 @@ class Index
 		
 		response.AppendHeader("Server", "Gixen/Mono | v0.1");
 		response.ContentLength64 = buffer.Length;
-		response.OutputStream.Write(buffer, 0, buffer.Length);		
-		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
+		response.OutputStream.Write(buffer, 0, buffer.Length);
+		
+		//new cycle
+		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);			
 	}
 	
 

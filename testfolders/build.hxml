@@ -6,5 +6,6 @@
 -net-lib GitSharp.dll 
 -net-lib GitSharp.Core.dll
 #include templates
+-resource favicon.ico@favicon
 -resource templates/branch_template.html@branch_template
 -resource templates/index_template.html@index_template
