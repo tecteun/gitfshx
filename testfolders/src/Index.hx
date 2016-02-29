@@ -116,10 +116,12 @@ class Index
 		*/
 	
 		trace("Gixen webservice starting. press any key to quit.");
+		// maybe do this multithreaded: http://stackoverflow.com/questions/4672010/multi-threading-with-net-httplistener
 		_listener = new cs.system.net.HttpListener();
 		_listener.Prefixes.Add("http://*:1234/");
 	    _listener.Start();
-		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
+		var result:cs.system.IAsyncResult = _listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
+		//result.AsyncWaitHandle.WaitOne();
 		cs.system.Console.ReadLine();
 		_listener.Stop();
 	}
@@ -155,6 +157,10 @@ class Index
 	//http://mikehadlow.blogspot.no/2006/07/playing-with-httpsys.html
 	//TODO: chunked responses?
 	private static function GetContextCallback(async_result:cs.system.IAsyncResult):Void{
+		//startup new thread cycle
+		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
+		
+		
 		var context:HttpListenerContext = _listener.EndGetContext(async_result);
 		var request = context.Request;
 		var response = context.Response;
@@ -170,10 +176,8 @@ class Index
 		
 			return;
 		}
-		
-		//var leaf:Dynamic = (untyped __cs__("global::Index.repo.Get<GitSharp.Leaf>('a')")); //GitSharp.Branch
-		// trace(leaf);
-		if(p.dir.indexOf("/refs/heads") > -1){
+
+		if(p.dir.indexOf("/refs/") > -1){
 			
 			var split = request.Url.LocalPath.split("/");
 			var repofilepath = null, target = null;
@@ -188,19 +192,19 @@ class Index
 					default: repofilepath = split.join("/"); break;
 				}
 			}
-			trace(target);
+			trace(qtype +  " " + target);
 			trace(repofilepath);
 			
 			var commit = null;
 			switch(qtype){
 				case "branch": commit = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit;
-				case "tags": commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target);
+				case "tag": commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
 			}
 			
 			try{
 				var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
-				
-				handleResponseString(leaf.Data, context);		
+				context.Response.StatusCode = 404;
+				handleResponseString(null != leaf ? leaf.Data : 'file $repofilepath not found in [$qtype/$target]', context);		
 				return;
 			}catch(e:Dynamic){
 				trace(e);
@@ -296,9 +300,8 @@ class Index
 			response.AppendHeader("Server", "Gixen/Mono | " + VERSION);
 			response.ContentLength64 = buffer.Length;
 			response.OutputStream.Write(buffer, 0, buffer.Length);
-			
-			//new cycle
-			_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);			
+			response.Close(); //close connection
+		
 		}catch(e:Dynamic){trace(e);};
 	}
 	
