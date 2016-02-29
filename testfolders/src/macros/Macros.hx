@@ -17,15 +17,14 @@ import haxe.Utf8;
  */
 class Macros
 {
-	macro public static function GetGitShortHead() 
+	macro public static function GetGitShortHead(version:String = "1.0") 
 	{
-		var version:String = "1.0";
 		var date = Date.now().toString();
         var pos = haxe.macro.Context.currentPos();
 		
 		trace(Sys.getEnv("PATH"));
 		var p = try new sys.io.Process("git", ["rev-parse" ,"--short", "HEAD"]) catch ( e : Dynamic ) { trace("no git command found: " +  e); return { expr : EConst(CString("")), pos : pos }; };
-		var output = "v."+version + "," + date + ",Git short SHA1:" + p.stderr.readAll().toString() + p.stdout.readAll().toString();
+		var output = "v"+version + ", " + date + ", SHA1:" + p.stderr.readAll().toString() + p.stdout.readAll().toString();
 		//Sys.command("git rev-parse --short HEAD > gitversion.txt");
 		//var output = sys.io.File.read("svnversion.txt").readLine();
 		output = output.split("\r").join("").split("\n").join("");
