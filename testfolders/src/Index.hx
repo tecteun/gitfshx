@@ -9,7 +9,11 @@ import cs.StdTypes;
  */
 //@:CsNative("using Microsoft.AspNet.Builder")
 //@:CsNative("using System.Net")
-
+@:enum
+abstract QType(String) {
+  var BRANCH = "/refs/heads";
+  var TAG = "/refs/tags";
+}
 //@:classCode("using System.Linq;\n")
 class Index
 {
@@ -166,28 +170,23 @@ class Index
 		var response = context.Response;
 		var output = "";
 
-		var p = new haxe.io.Path(request.Url.LocalPath);
-		trace(p.dir);
-		trace(p.backslash);
-		trace(p.file);
 		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
 		if(request.Url.LocalPath == "/favicon.ico"){
-			handleResponse(haxe.Resource.getBytes("favicon").getData(), context, "image/x-icon");	
-		
+			handleResponse(haxe.Resource.getBytes("favicon").getData(), context, "image/x-icon");
 			return;
 		}
 
-		if(p.dir.indexOf("/refs/") > -1){
+		if(request.Url.LocalPath.indexOf("/refs/") == 0){
 			
 			var split = request.Url.LocalPath.split("/");
 			var repofilepath = null, target = null;
-			var qtype = "";
+			var qtype:QType = null;
 			while(split.length > 0){
 				switch(target = split.shift()){
 					
 					case "refs": continue;
-					case "heads": qtype ="branch"; continue;
-					case "tags": qtype ="tag"; continue;
+                    case "heads": qtype = QType.BRANCH; continue;
+                    case "tags": qtype = QType.TAG; continue;
 					case "":continue;
 					default: repofilepath = split.join("/"); break;
 				}
@@ -204,13 +203,22 @@ class Index
             }
 			
 			var commit = null;
-            if(null != target && target.length > 0){
-    			switch(qtype){
-    				case "branch": commit = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit;
-    				case "tag": commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
-    			}
-            }
-			
+            
+            //try getting branch or tag
+            try{
+                if(null != target && target.length > 0){
+        			switch(qtype){
+        				case QType.BRANCH: commit = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit;
+                        case QType.TAG: commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
+        			}
+                }
+            }catch(e:Dynamic){
+                context.Response.StatusCode = 404;
+				handleResponseString('$qtype $target not found in repo/branch', context);
+                return;
+			};
+            
+            //try getting a requested file (if any in repofilepath)
 			try{
 				var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
                 if(null != leaf){
@@ -235,14 +243,10 @@ class Index
 				*/
 				try{
 					var t = new haxe.Template(haxe.Resource.getString("index_template"));
-					var obj = GitHelper.parseTree(commit);
-					
-					output = t.execute({filetree: obj, breadcrumb: [qtype, target]});
-				}catch(e:Dynamic){ trace(e); };
-				trace("done");			
-			}else{
-				trace('branch ${p.file} not found');
-				output = "not found that branch bitch!";
+					output = t.execute({filetree: GitHelper.parseTree(commit), breadcrumb: [cast(qtype, String), target]});
+				}catch(e:Dynamic){ 
+                    trace(e); 
+                };
 			}
 		}else{
 			
