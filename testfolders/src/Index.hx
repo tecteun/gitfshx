@@ -262,13 +262,13 @@ class Index
 			
 			var count = 0;
 			for(branch in GetBranches()){
-				branches.push({count: count++, name: branch, link: '${branch.Fullname}/', lastmodified: branch.CurrentCommit.AuthorDate});
+				branches.push({count: count++, name: branch, link: '${branch.Fullname}/', lastmodified: branch.CurrentCommit.AuthorDate, msg: branch.CurrentCommit.Message});
 			}
 			
 			
 			try{
 				for(tag in GetTags()){
-					branches.push({count: count++, name: tag + " " + tag.Name, link: 'refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate});
+					branches.push({count: count++, name: tag + " " + tag.Name, link: 'refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate, msg: tag.Target.Message});
 				}
 				output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
 			}catch(e:Dynamic){trace(e);}
@@ -310,9 +310,10 @@ class Index
 			if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
 				var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
 				var zip = new cs.system.io.compression.GZipStream(ms, cs.system.io.compression.CompressionMode.Compress);
-				zip.Write(buffer, 0, buffer.Length);
+				var oldSize = buffer.Length;
+                zip.Write(buffer, 0, buffer.Length);
 				zip.Close();
-				var oldSize= buffer.Length;
+				
 				
 				//set new buffer to compressed stream
 				buffer = ms.ToArray();
