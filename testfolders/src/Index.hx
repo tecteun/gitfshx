@@ -128,7 +128,7 @@ class Index
 		trace("Gixen webservice starting. press any key to quit.");
 		// maybe do this multithreaded: http://stackoverflow.com/questions/4672010/multi-threading-with-net-httplistener
 		_listener = new cs.system.net.HttpListener();
-		_listener.Prefixes.Add("http://*:8080/");
+		_listener.Prefixes.Add("http://*:1234/");
 	    _listener.Start();
 		var result:cs.system.IAsyncResult = _listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
 		//result.AsyncWaitHandle.WaitOne();
