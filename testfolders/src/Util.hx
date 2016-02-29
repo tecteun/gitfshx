@@ -167,6 +167,7 @@ class Util {
 	    "hdf": "application/x-hdf",
 	    "hqx": "application/mac-binhex40",
 		"hx": "text/x-haxe",
+		"hxml": "text/x-hxml",
 	    "htm": "text/html",
 	    "html": "text/html",
 	    "ice": "x-conference/x-cooltalk",

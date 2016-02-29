@@ -203,8 +203,13 @@ class Index
 			
 			try{
 				var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
-				context.Response.StatusCode = 404;
-				handleResponseString(null != leaf ? leaf.Data : 'file $repofilepath not found in [$qtype/$target]', context);		
+                if(null != leaf){
+                    handleResponseLeaf(leaf, context);
+                }else{
+                    context.Response.StatusCode = 404;
+    				handleResponseString('file $repofilepath not found in [$qtype/$target]', context);	
+                }
+					
 				return;
 			}catch(e:Dynamic){
 				trace(e);
@@ -271,6 +276,10 @@ class Index
 		handleResponseString(output, context);
 	}
 	
+    private static function handleResponseLeaf(leaf:Dynamic, context:HttpListenerContext, ?UTF8:Bool = true){
+        handleResponse(UTF8 ? cs.system.text.Encoding.UTF8.GetBytes(cast(leaf.Data, String)) : leaf.RawData, context, Util.getMimeType(leaf.Path));
+    }
+    
 	private static function handleResponseString(output:String, context:HttpListenerContext, ?UTF8:Bool = true){
 		handleResponse(UTF8 ? cs.system.text.Encoding.UTF8.GetBytes(output) : haxe.io.Bytes.ofString(output).getData(), context, null);
 	}
