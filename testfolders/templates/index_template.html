@@ -46,7 +46,13 @@
     </nav-->
 
     <div class="container">
-
+        <h1>Directory index:</h1>
+        <ol class="breadcrumb">
+            ::foreach breadcrumb::
+            <li>::__current__::</li>
+            ::end::
+        </ol>
+        
         <div class="panel panel-default">
             <!-- Table -->
             <table class="table">
@@ -60,10 +66,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    ::foreach __current__::
+                    ::foreach filetree::
                     <tr>
                         <th scope="row"></th>
-                        <td><a href="./::file::">::file::</a></td>
+                        <td><a href="::file::">::file::</a></td>
                         <td>::mime::</a></td>
                         <td>::sha256::</a></td>
                         <td>::last_commit.CommitDate::</td>

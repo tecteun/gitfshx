@@ -194,12 +194,22 @@ class Index
 			}
 			trace(qtype +  " " + target);
 			trace(repofilepath);
+            
+            //redirect requests for index without trailing /
+            if((repofilepath == null || repofilepath.length == 0) && !StringTools.endsWith(request.Url.LocalPath, "/")){
+                context.Response.StatusCode = 302;
+                context.Response.Headers.Set("Location", request.Url.LocalPath + "/");
+                handleResponseString("moved", context);
+                return;
+            }
 			
 			var commit = null;
-			switch(qtype){
-				case "branch": commit = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit;
-				case "tag": commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
-			}
+            if(null != target && target.length > 0){
+    			switch(qtype){
+    				case "branch": commit = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit;
+    				case "tag": commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
+    			}
+            }
 			
 			try{
 				var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
@@ -226,9 +236,8 @@ class Index
 				try{
 					var t = new haxe.Template(haxe.Resource.getString("index_template"));
 					var obj = GitHelper.parseTree(commit);
-					trace(obj);
 					
-					output = t.execute(obj);
+					output = t.execute({filetree: obj, breadcrumb: [qtype, target]});
 				}catch(e:Dynamic){ trace(e); };
 				trace("done");			
 			}else{
@@ -243,18 +252,18 @@ class Index
 			
 			var count = 0;
 			for(branch in GetBranches()){
-				branches.push({count: count++, name: branch, link: branch.Fullname, lastmodified: branch.CurrentCommit.AuthorDate});
+				branches.push({count: count++, name: branch, link: '${branch.Fullname}/', lastmodified: branch.CurrentCommit.AuthorDate});
 			}
 			
 			
 			try{
 				for(tag in GetTags()){
-					branches.push({count: count++, name: tag + " " + tag.Name, link: "/refs/tags/"+tag.Name, lastmodified: tag.Target.AuthorDate});
+					branches.push({count: count++, name: tag + " " + tag.Name, link: 'refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate});
 				}
 				output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
 			}catch(e:Dynamic){trace(e);}
 			
-			
+			/*
 			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
 			
 			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
@@ -271,6 +280,7 @@ class Index
 	        }
 			buf.add(GetBranches());
 	        buf.add("");
+            */
 		}
 			
 		handleResponseString(output, context);
