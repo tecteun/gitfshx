@@ -7,7 +7,7 @@ typedef FileTree = {
 
 class GitHelper{
     
-    public static function parseTree(branch:Dynamic):Array<FileTree> {
+    public static function parseTree(commit:Dynamic):Array<FileTree> {
         var retval = new Array<FileTree>();
         
         var parseLeaves:Dynamic->Void = function(tree:Dynamic){
@@ -39,7 +39,7 @@ class GitHelper{
         }
         
         //start parsing at lowest level tree
-        subTree(branch.CurrentCommit.Tree);
+        subTree(commit.Tree);
         
         
         

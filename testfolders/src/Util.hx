@@ -59,6 +59,61 @@ class Util {
 		return output.getBytes();
 	}
     
+    private static var KBITSPS_BYTESTPS_RATIO:Int = 128;
+		
+	public static function kbitsPerSecond2BytesPerSecond(value:Float):Float
+	{
+		return value * KBITSPS_BYTESTPS_RATIO;
+	}
+	
+	public static function bytesPerSecond2kbitsPerSecond(value:Float):Float
+	{
+		return value / KBITSPS_BYTESTPS_RATIO;
+	}
+	
+	public static function bytes2String(value:Float):String
+	{
+		if (Math.isNaN(value) || value == 0)
+		{
+			return Std.string(value);
+		}
+		
+		var s:Array<String> 	= ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+		var e:Int 	= Math.floor( Math.log( value ) / Math.log( 1024 ) );
+		var ret:String = Std.string( value / Math.pow( 1024, Math.floor( e ) ) );
+		
+		ret = ret.substr(0, ret.indexOf(".") > -1 ? ret.indexOf(".") + 2 : ret.length); //toFixed(2);
+		return ret + " " + s[e];	
+	}
+	
+	public static function bytesPerSecond2String(value:Float):String
+	{
+		if (Math.isNaN(value) || value == 0)
+		{
+			return Std.string(value);
+		}
+		var bitsps:Float = value * 8;
+		var s:Array<String>  	= ['bits/s', 'kbit/s', 'Mbit/s', 'Gbit/s', 'Tbit/s', 'Pbit/s'];
+		var e:Int 	= Math.floor( Math.log( bitsps ) / Math.log( 1000 ) );
+		var ret:String = Std.string( bitsps / Math.pow( 1000, Math.floor( e ) ) );
+		ret = ret.substr(0, ret.indexOf(".") + 2); //toFixed(2);
+		return ret + " " + s[e];			
+	}
+	
+	public static function bytesPerSecond2ByteString(value:Float):String
+	{
+		if (Math.isNaN(value) || value == 0)
+		{
+			return Std.string(value);
+		}
+		var bitsps:Float = value;
+		var s:Array<String>  	= ['Bytes/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s'];
+		var e:Int 	= Math.floor( Math.log( bitsps ) / Math.log( 1024 ) );
+		var ret:String = Std.string( bitsps / Math.pow( 1024, Math.floor( e ) ) );
+		ret = ret.substr(0, ret.indexOf(".") + 2); //toFixed(2);
+		return ret + " " + s[e];			
+	}
+    
     public static function getMimeType(file:String):String{
         var p = new haxe.io.Path(file).ext;
         return Reflect.hasField(Util.mimes, p) ? Reflect.field(Util.mimes, p) : "application/octet-stream";

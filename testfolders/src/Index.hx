@@ -13,6 +13,7 @@ import cs.StdTypes;
 //@:classCode("using System.Linq;\n")
 class Index
 {
+	private static inline var VERSION:String = "0.2beta";
 	private static var repo:Dynamic;
 	static var _listener:cs.system.net.HttpListener;
 	/**
@@ -158,10 +159,17 @@ class Index
 		var request = context.Request;
 		var response = context.Response;
 		var output = "";
+
 		var p = new haxe.io.Path(request.Url.LocalPath);
 		trace(p.dir);
 		trace(p.backslash);
 		trace(p.file);
+		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
+		if(request.Url.LocalPath == "/favicon.ico"){
+			handleResponse(haxe.Resource.getBytes("favicon").getData(), context, "image/x-icon");	
+		
+			return;
+		}
 		
 		//var leaf:Dynamic = (untyped __cs__("global::Index.repo.Get<GitSharp.Leaf>('a')")); //GitSharp.Branch
 		// trace(leaf);
@@ -169,21 +177,28 @@ class Index
 			
 			var split = request.Url.LocalPath.split("/");
 			var repofilepath = null, target = null;
+			var qtype = "";
 			while(split.length > 0){
 				switch(target = split.shift()){
 					
 					case "refs": continue;
-					case "heads": continue;
+					case "heads": qtype ="branch"; continue;
+					case "tags": qtype ="tag"; continue;
 					case "":continue;
 					default: repofilepath = split.join("/"); break;
 				}
 			}
 			trace(target);
 			trace(repofilepath);
-			var branch = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target); //get requested branch
+			
+			var commit = null;
+			switch(qtype){
+				case "branch": commit = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit;
+				case "tags": commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target);
+			}
 			
 			try{
-				var leaf:Dynamic = untyped __cs__("(branch as GitSharp.Branch).CurrentCommit.Tree[repofilepath];"); //these array accessors cannot work with haxe?
+				var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
 				
 				handleResponseString(leaf.Data, context);		
 				return;
@@ -191,7 +206,7 @@ class Index
 				trace(e);
 			};
 			
-			if(null != branch){
+			if(null != commit){
 				//https://github.com/HaxeFoundation/haxe/issues/1903
 				/*
 				var ts : cs.system.threading.ThreadStart = function(){ GitHelper.parseTree(branch); };
@@ -201,7 +216,7 @@ class Index
 				*/
 				try{
 					var t = new haxe.Template(haxe.Resource.getString("index_template"));
-					var obj = GitHelper.parseTree(branch);
+					var obj = GitHelper.parseTree(commit);
 					trace(obj);
 					
 					output = t.execute(obj);
@@ -219,18 +234,20 @@ class Index
 			
 			var count = 0;
 			for(branch in GetBranches()){
-				branches.push({count: count++, name: branch, lastmodified: branch.CurrentCommit.AuthorDate});
+				branches.push({count: count++, name: branch, link: branch.Fullname, lastmodified: branch.CurrentCommit.AuthorDate});
 			}
-			for(tag in GetTags()){
-				branches.push({count: count++, name: tag, lastmodified: tag.CurrentCommit.AuthorDate});
-			}
+			
+			
 			try{
+				for(tag in GetTags()){
+					branches.push({count: count++, name: tag + " " + tag.Name, link: "/refs/tags/"+tag.Name, lastmodified: tag.Target.AuthorDate});
+				}
 				output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
 			}catch(e:Dynamic){trace(e);}
 			
 			
 			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
-			trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
+			
 			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
 			var buf = new StringBuf();
 			buf.add("");
@@ -251,32 +268,38 @@ class Index
 	}
 	
 	private static function handleResponseString(output:String, context:HttpListenerContext, ?UTF8:Bool = true){
-		handleResponse(UTF8 ? cs.system.text.Encoding.UTF8.GetBytes(output) : haxe.io.Bytes.ofString(output).getData(), context);
+		handleResponse(UTF8 ? cs.system.text.Encoding.UTF8.GetBytes(output) : haxe.io.Bytes.ofString(output).getData(), context, null);
 	}
 	
-	private static function handleResponse(buffer:cs.NativeArray<UInt8>, context:HttpListenerContext):Void {
-		var response = context.Response, request = context.Request;
-		if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
-			var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
-			var zip = new cs.system.io.compression.GZipStream(ms, cs.system.io.compression.CompressionMode.Compress);
-			zip.Write(buffer, 0, buffer.Length);
-			zip.Close();
-			var oldSize= buffer.Length;
+	private static function handleResponse(buffer:cs.NativeArray<UInt8>, context:HttpListenerContext, mimeType:String):Void {
+		try{
+			var response = context.Response, request = context.Request;
+			if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
+				var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
+				var zip = new cs.system.io.compression.GZipStream(ms, cs.system.io.compression.CompressionMode.Compress);
+				zip.Write(buffer, 0, buffer.Length);
+				zip.Close();
+				var oldSize= buffer.Length;
+				
+				//set new buffer to compressed stream
+				buffer = ms.ToArray();
+				
+				var perc = Math.round(((buffer.Length - oldSize) / oldSize) * 100);
+				trace('write gzipped stream ${Util.bytes2String(oldSize)} -> ${Util.bytes2String(buffer.Length)} [$perc% reduction of bytes]');
+				response.AddHeader("Content-Encoding", "gzip");
+			}
 			
-			//set new buffer to compressed stream
-			buffer = ms.ToArray();
+			if(null != mimeType){
+				response.AppendHeader("Content-Type", mimeType);
+			}
 			
-			var perc = Math.round(((buffer.Length - oldSize) / oldSize) * 100);
-			trace('write compressed stream $oldSize->${buffer.Length} $perc% reduction of bytes');
-			response.AddHeader("Content-Encoding", "gzip");
-		}
-		
-		response.AppendHeader("Server", "Gixen/Mono | v0.1");
-		response.ContentLength64 = buffer.Length;
-		response.OutputStream.Write(buffer, 0, buffer.Length);
-		
-		//new cycle
-		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);			
+			response.AppendHeader("Server", "Gixen/Mono | " + VERSION);
+			response.ContentLength64 = buffer.Length;
+			response.OutputStream.Write(buffer, 0, buffer.Length);
+			
+			//new cycle
+			_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);			
+		}catch(e:Dynamic){trace(e);};
 	}
 	
 
