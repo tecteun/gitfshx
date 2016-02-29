@@ -152,9 +152,30 @@ class Index
 		trace(p.file);
 		
 		//var leaf:Dynamic = (untyped __cs__("global::Index.repo.Get<GitSharp.Leaf>('a')")); //GitSharp.Branch
-		//trace(leaf);
-		if(p.dir == "/refs/heads"){
-			var branch = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(p.file);
+		// trace(leaf);
+		if(p.dir.indexOf("/refs/heads") > -1){
+			
+			var split = request.Url.LocalPath.split("/");
+			var repofilepath = null, target = null;
+			while(split.length > 0){
+				switch(target = split.shift()){
+					
+					case "refs": continue;
+					case "heads": continue;
+					case "":continue;
+					default: repofilepath = split.join("/"); break;
+				}
+			}
+			trace(target);
+			trace(repofilepath);
+			var branch = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target); //get requested branch
+			
+			try{
+				var leaf:Dynamic = untyped __cs__("(branch as GitSharp.Branch).CurrentCommit.Tree[repofilepath];"); //these array accessors cannot work with haxe?
+				trace(leaf.Data);				
+			}catch(e:Dynamic){
+				trace(e);
+			};
 			
 			if(null != branch){
 				//https://github.com/HaxeFoundation/haxe/issues/1903
