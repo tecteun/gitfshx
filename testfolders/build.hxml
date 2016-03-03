@@ -1,4 +1,5 @@
 #-lib wtri
+-D net-ver=40
 -cs output
 -cp src
 -main Index

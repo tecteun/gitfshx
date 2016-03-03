@@ -25,6 +25,7 @@ class Index
 	 */
 	static function main() 
 	{
+        
 		cs.system.Console.set_BackgroundColor(cs.system.ConsoleColor.Red);
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
 		trace(Macros.GetGitShortHead());
@@ -215,7 +216,7 @@ class Index
             try{
                 if(null != target && target.length > 0){
         			commit = switch(qtype){
-                        case QType.BRANCH: cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; 
+                        case QType.BRANCH: untyped __cs__("(repo as GitSharp.Repository).Get<GitSharp.Commit>(commitPointer);"); //cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; //repo.Get<Commit>( "979829389f136bfabb5956c68d909e7bf3092a4e");
                         case QType.TAG: cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
         			}
                 }
@@ -225,14 +226,17 @@ class Index
                 return;
 			};
             
-            var enumerator:cs.system.collections.IEnumerator = commit.Ancestors.GetEnumerator();
-    		while(enumerator.MoveNext()){
-    			trace('${enumerator.Current} ${enumerator.Current.CommitDate} ${enumerator.Current.Message}');
-    		}
+            if(commit != null && repofilepath == null || repofilepath.length == 0){
+                var enumerator:cs.system.collections.IEnumerator = commit.Ancestors.GetEnumerator();
+        		while(enumerator.MoveNext()){
+        			trace('${enumerator.Current} ${enumerator.Current.CommitDate} ${enumerator.Current.Message} ${enumerator.Current.Hash}');
+        		}
+            }
             
             //try getting a requested file (if any in repofilepath)
 			try{
 				var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
+            
                 if(null != leaf){
                     handleResponseLeaf(leaf, context);
                 }else{
