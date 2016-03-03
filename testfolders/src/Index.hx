@@ -5,12 +5,8 @@ import macros.Macros;
 import cs.StdTypes;
 import gitsharp.Branch;
 import gitsharp.Repository;
-/**
- * https://gist.github.com/textarcana/1306223 
- * https://github.com/henon/GitSharp/
- */
-//@:CsNative("using Microsoft.AspNet.Builder")
-//@:CsNative("using System.Net")
+import gitsharp.Commit;
+
 @:enum
 abstract QType(String) {
   var BRANCH = "/refs/heads";
@@ -18,8 +14,11 @@ abstract QType(String) {
 }
 
 /**
+ * c# - haxe -net-lib manual
  * https://github.com/HaxeFoundation/HaxeManual/wiki/Haxe-C%23
-*/
+ * https://gist.github.com/textarcana/1306223 
+ * https://github.com/henon/GitSharp/
+ */
 class Index
 {
 	private static inline var VERSION:String = "0.2beta";
@@ -213,13 +212,13 @@ class Index
                 return;
             }
 			
-			var commit = null;
+			var commit:Commit = null;
             
             //try getting branch or tag
             try{
                 if(null != target && target.length > 0){
         			commit = switch(qtype){
-                        case QType.BRANCH: untyped __cs__("(repo as GitSharp.Repository).Get<GitSharp.Commit>(commitPointer);"); //cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; //repo.Get<Commit>( "979829389f136bfabb5956c68d909e7bf3092a4e");
+                        case QType.BRANCH: repo.Get(commitPointer); //cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; //repo.Get<Commit>( "979829389f136bfabb5956c68d909e7bf3092a4e");
                         case QType.TAG: cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
         			}
                 }
@@ -347,11 +346,5 @@ class Index
 		
 		}catch(e:Dynamic){trace(e);};
 	}
-	
-
-	
-	
-	
-	
 	
 }
