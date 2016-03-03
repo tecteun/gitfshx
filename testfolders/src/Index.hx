@@ -23,6 +23,7 @@ class Index
 {
 	private static inline var VERSION:String = "0.2beta";
 	private static var repo:Repository;
+    private static inline var prefix = "/v1"; //api prefix
 	static var _listener:cs.system.net.HttpListener;
 	/**
 	 * Required main starting point of our application.
@@ -75,7 +76,7 @@ class Index
 		trace("Gixen webservice starting. press any key to quit.");
 		// maybe do this multithreaded: http://stackoverflow.com/questions/4672010/multi-threading-with-net-httplistener
 		_listener = new cs.system.net.HttpListener();
-		_listener.Prefixes.Add("http://*:1234/");
+		_listener.Prefixes.Add('http://*:1234$prefix/');
 	    _listener.Start();
 		var result:cs.system.IAsyncResult = _listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
 		//result.AsyncWaitHandle.WaitOne();
@@ -122,16 +123,16 @@ class Index
 		var request = context.Request;
 		var response = context.Response;
 		var output = "";
+        var path = StringTools.startsWith(request.Url.LocalPath, prefix) ? request.Url.LocalPath.substr(prefix.length) : request.Url.LocalPath;
 
 		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
-		if(request.Url.LocalPath == "/favicon.ico"){
+		if(path == "/favicon.ico"){
 			handleResponse(haxe.Resource.getBytes("favicon").getData(), context, "image/x-icon");
 			return;
 		}
-
-		if(request.Url.LocalPath.indexOf("/refs/") == 0){
-			
-			var split = request.Url.LocalPath.substr(1).split("/");
+        
+		if(path.indexOf("/refs/") == 0){
+			var split = path.substr(1).split("/");
 			var repofilepath = null, target = null;
 			var qtype:QType = null;
             var commitPointer:String = null;
@@ -159,9 +160,9 @@ class Index
             }
             
             //redirect requests for index without trailing /
-            if((repofilepath == null || repofilepath.length == 0) && !StringTools.endsWith(request.Url.LocalPath, "/")){
+            if((repofilepath == null || repofilepath.length == 0) && !StringTools.endsWith(path, "/")){
                 context.Response.StatusCode = 302;
-                context.Response.Headers.Set("Location", request.Url.LocalPath + "/");
+                context.Response.Headers.Set("Location", path + "/");
                 handleResponseString("moved", context);
                 return;
             }
@@ -193,10 +194,10 @@ class Index
             //list parent commits in branch/commit
             if(qtype == QType.BRANCH && commitPointer == null && commit != null && (repofilepath == null || repofilepath.length == 0)){
                 var t = new haxe.Template(haxe.Resource.getString("commits_template"));
-                var count = 0;
+                var count = 1;
                 var commits:Array<Dynamic> = new Array<Dynamic>();
                 var enumerator:cs.system.collections.IEnumerator = commit.Ancestors.GetEnumerator();
-                commits.push({count: count++, name: "HEAD", link: 'head/', lastmodified: commit.AuthorDate, msg: commit.Message});
+                commits.push({count: count++, name: 'HEAD[${commit.ShortHash}]', link: 'head/', lastmodified: commit.AuthorDate, msg: commit.Message});
                 trace(repofilepath);
                 trace(repofilepath.length);
         		while(enumerator.MoveNext()){
@@ -241,7 +242,7 @@ class Index
                     bc.push(cast(qtype, String));
                     bc.push(target);
                     if(qtype == QType.BRANCH){
-                        bc.push((commitPointer == null ? 'head (${commit.Hash})' : commitPointer) + " (" + commit.CommitDate +")");
+                        bc.push((commitPointer == null ? 'head [${commit.Hash}]' : '$commitPointer [${commit.Hash}]') + " (" + commit.CommitDate +")");
                     }
                     if(qtype == QType.TAG){
                         bc.push('${commit.Hash} (${commit.CommitDate})');
@@ -258,27 +259,24 @@ class Index
             }
 		}else{
 			
-            if(request.Url.LocalPath.length > 1){
+            if(path.length > 1){
                 context.Response.StatusCode = 400;
                 handleResponseString("Bad Request", context);
                 return;
             }
             
-            
-			var t = new haxe.Template(haxe.Resource.getString("branch_template"));
-			
-			var branches:Array<Dynamic> = new Array<Dynamic>();
-			
-			var count = 0;
-			for(branch in GetBranches()){
-				branches.push({count: count++, name: branch, link: '${branch.Fullname}/', lastmodified: branch.CurrentCommit.AuthorDate, msg: branch.CurrentCommit.Message});
-			}
-			
 			try{
+    			var t = new haxe.Template(haxe.Resource.getString("branch_template"));
+    			var branches:Array<Dynamic> = new Array<Dynamic>();
+    			var count = 1;
+                
+                for(branch in GetBranches()){
+                    branches.push({count: count++, name: branch, link: prefix + '/${branch.Fullname}/', lastmodified: branch.CurrentCommit.AuthorDate, msg: branch.CurrentCommit.Message});
+                }
 				for(tag in GetTags()){
-					branches.push({count: count++, name: tag + " " + tag.Name, link: 'refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate, msg: tag.Target.Message});
+					branches.push({count: count++, name: tag + " " + tag.Name, link: prefix + '/refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate, msg: tag.Target.Message});
 				}
-				output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
+				output = t.execute({ rows : GetBranches(), type:"Branch/Tag index:", branches: branches });
 			}catch(e:Dynamic){
                 trace(e);
             }
@@ -304,7 +302,6 @@ class Index
 				var oldSize = buffer.Length;
                 zip.Write(buffer, 0, buffer.Length);
 				zip.Close();
-				
 				
 				//set new buffer to compressed stream
 				buffer = ms.ToArray();
