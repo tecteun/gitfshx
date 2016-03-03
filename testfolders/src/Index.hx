@@ -184,20 +184,21 @@ class Index
 
 		if(request.Url.LocalPath.indexOf("/refs/") == 0){
 			
-			var split = request.Url.LocalPath.split("/");
+			var split = request.Url.LocalPath.substr(1).split("/");
 			var repofilepath = null, target = null;
 			var qtype:QType = null;
+            var commitPointer:String = null;
 			while(split.length > 0){
 				switch(target = split.shift()){
 					
 					case "refs": continue;
                     case "heads": qtype = QType.BRANCH; continue;
                     case "tags": qtype = QType.TAG; continue;
-					case "":continue;
-					default: repofilepath = split.join("/"); break;
+					
+                default: trace(target); if(commitPointer == null && qtype == QType.BRANCH){ commitPointer = split.shift(); }; repofilepath = split.join("/");  break;
 				}
 			}
-			trace(qtype +  " " + target);
+			trace(qtype +  " " + target + " " + commitPointer);
 			trace(repofilepath);
             
             //redirect requests for index without trailing /
@@ -213,9 +214,9 @@ class Index
             //try getting branch or tag
             try{
                 if(null != target && target.length > 0){
-        			switch(qtype){
-        				case QType.BRANCH: commit = cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit;
-                        case QType.TAG: commit = cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
+        			commit = switch(qtype){
+                        case QType.BRANCH: cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; 
+                        case QType.TAG: cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
         			}
                 }
             }catch(e:Dynamic){
@@ -223,6 +224,11 @@ class Index
 				handleResponseString('$qtype $target not found in repo/branch', context);
                 return;
 			};
+            
+            var enumerator:cs.system.collections.IEnumerator = commit.Ancestors.GetEnumerator();
+    		while(enumerator.MoveNext()){
+    			trace('${enumerator.Current} ${enumerator.Current.CommitDate} ${enumerator.Current.Message}');
+    		}
             
             //try getting a requested file (if any in repofilepath)
 			try{

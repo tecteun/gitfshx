@@ -161,6 +161,7 @@ class Util {
 	    "exe": "application/octet-stream",
 	    "ez": "application/andrew-inset",
 	    "gif": "image/gif",
+        "gitignore": "text/plain",
 	    "gram": "application/srgs",
 	    "grxml": "application/srgs+xml",
 	    "gtar": "application/x-gtar",
