@@ -34,21 +34,7 @@ class Index
 		trace(Macros.GetGitShortHead());
 		cs.system.Console.set_BackgroundColor(cs.system.ConsoleColor.Green);
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
-	/*	
-    var parseFolder:String->Dynamic = null;
-    parseFolder = function(folder:String){
-      folder = haxe.io.Path.addTrailingSlash(folder);
-      var retval:Dynamic = {}, fsubfolder = false, path;
-      for(rawpath in sys.FileSystem.readDirectory(folder)){
-        path = folder + rawpath;
-        if(sys.FileSystem.isDirectory(path)){
-          fsubfolder = true;
-          Reflect.setField(retval, rawpath, parseFolder(path));
-        }
-      }
-      return fsubfolder == false ? sys.FileSystem.readDirectory(folder) : retval ;
-    }
-	*/
+
         var repoPath = Repository.FindRepository(".");
 		if(Repository.IsValid(repoPath)){
             repo = new Repository(repoPath);
@@ -63,21 +49,11 @@ class Index
         
         var branch:Branch = repo.Get("master");
 		
-        //trace(branch.Fullname);
-		//var leaves:Iterator<Dynamic>= cast(branch.CurrentCommit.Tree.Leaves.Cast<());
-		//GitHelper.parseTree(branch);
-		
-		//branch.CurrentCommit.Tree; //upper level tree
-		//branch.CurrentCommit.Tree.Trees; //sub level level tree
-		
         for(tree in cs.Lib.array(cast branch.CurrentCommit.Tree.Trees)){
 		
 			trace("path: " + tree.Path + " contains " + cs.Lib.array(tree.Leaves).length + " leaves");
-			//var enumerable:cs.system.collections.IEnumerator = tree.GetHistory();
-			//trace(enumerable);
-			//trace(tree.GetHistory().ToArray());
+
 			for(leaf in cs.Lib.array(tree.Leaves)){
-				//trace(" aap");//https://github.com/henon/GitSharp/blob/4cef5fe76e80cfb457abb7d5f9d8c5040affa4c5/GitSharp/AbstractTreeNode.cs
 				if(leaf.Path == "testfolders/build.hxml"){
 					var ienumerable:cs.system.collections.IEnumerable = leaf.GetHistory();
 					var enumerator:cs.system.collections.IEnumerator = ienumerable.GetEnumerator();
@@ -89,39 +65,12 @@ class Index
 									trace(leaf.Data);
 								}
 							}
-						}
-						
-					}
-					//trace(leaf.GetLastCommit().Data);
-					/*
-					trace(leaf.GetLastCommit().Data);
-					trace(enumerable.Current);
-					//trace(enumerable.Current.Data);
-					trace(enumerable.MoveNext());
-					trace("test " + enumerable.Current);
-					*/
-					/*
-					for(leaf in leaf.GetHistory()){
-						trace(leaf.Data);
-					}*/
-				}
-				//trace(leaf.Data);
-				
+						}						
+					}				
+				}				
 			}
 		}
-		/*
-		//trace(cs.Lib.array());
-		trace("test");
-		trace(repo);
-		trace(repo.Head);
-		trace(repo.Head.CurrentCommit);
-		trace(repo.Head.CurrentCommit.Ancestors);
-		trace(repo.Head.CurrentCommit.Ancestors.Where(function(d:Dynamic):Bool{ return true;}) );
-		for(ancestor in cast(branch.CurrentCommit.Ancestors, Array<Dynamic>)){
-			trace(ancestor.Message);
-			
-		}
-		*/
+	
 	
 		trace("Gixen webservice starting. press any key to quit.");
 		// maybe do this multithreaded: http://stackoverflow.com/questions/4672010/multi-threading-with-net-httplistener
@@ -185,19 +134,29 @@ class Index
 			var split = request.Url.LocalPath.substr(1).split("/");
 			var repofilepath = null, target = null;
 			var qtype:QType = null;
-            var commitPointer:String = "head";
+            var commitPointer:String = null;
+            
 			while(split.length > 0){
 				switch(target = split.shift()){
 					
 					case "refs": continue;
                     case "heads": qtype = QType.BRANCH; continue;
                     case "tags": qtype = QType.TAG; continue;
-					
-                default: trace(target); if(commitPointer == null && qtype == QType.BRANCH){ commitPointer = split.shift(); }; repofilepath = split.join("/");  break;
+                    default:    if(commitPointer == null && qtype == QType.BRANCH){ 
+                                    var temp = split.length > 0 ? split.shift() : ""; 
+                                    if(temp.length > 0){ commitPointer = temp; };   
+                                }; 
+                                repofilepath = split.join("/");  break;
 				}
 			}
 			trace(qtype +  " " + target + " " + commitPointer);
 			trace(repofilepath);
+            
+            if(null == qtype){
+                context.Response.StatusCode = 400;
+                handleResponseString("Bad Request", context);
+                return;
+            }
             
             //redirect requests for index without trailing /
             if((repofilepath == null || repofilepath.length == 0) && !StringTools.endsWith(request.Url.LocalPath, "/")){
@@ -212,7 +171,7 @@ class Index
             //try getting branch or tag
             try{
                 if(null != target && target.length > 0){
-                    if(commitPointer == "head"){
+                    if(commitPointer == null && qtype == QType.BRANCH){
                         var branch:Branch = repo.Get(target);
                         commit = branch.CurrentCommit;
                     }else{                        
@@ -229,13 +188,15 @@ class Index
                 return;
 			};
             
-            if(commit != null && repofilepath == null || repofilepath.length == 0){
+            //list parent commits in branch/commit
+            if(qtype == QType.BRANCH && commitPointer == null && commit != null && (repofilepath == null || repofilepath.length == 0)){
                 var t = new haxe.Template(haxe.Resource.getString("commits_template"));
                 var count = 0;
                 var commits:Array<Dynamic> = new Array<Dynamic>();
                 var enumerator:cs.system.collections.IEnumerator = commit.Ancestors.GetEnumerator();
                 commits.push({count: count++, name: "HEAD", link: 'head/', lastmodified: commit.AuthorDate, msg: commit.Message});
-                
+                trace(repofilepath);
+                trace(repofilepath.length);
         		while(enumerator.MoveNext()){
         			trace('${enumerator.Current} ${enumerator.Current.CommitDate} ${enumerator.Current.Message} ${enumerator.Current.Hash}');
                     commits.push({count: count++, name: enumerator.Current, link: '${enumerator.Current.Hash}/', lastmodified: enumerator.Current.AuthorDate, msg: enumerator.Current.Message});
@@ -249,23 +210,23 @@ class Index
                 return;
             }
             
-            //try getting a requested file (if any in repofilepath)
-			try{
-				var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
-            
-                if(null != leaf){
-                    handleResponseLeaf(leaf, context);
-                }else{
-                    context.Response.StatusCode = 404;
-    				handleResponseString('file $repofilepath not found in [$qtype/$target]', context);	
-                }
-					
-				return;
-			}catch(e:Dynamic){
-				trace(e);
-			};
-			
 			if(null != commit){
+                //try getting a requested file (if any in repofilepath)
+                try{
+                    var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
+                
+                    if(null != leaf){
+                        handleResponseLeaf(leaf, context);
+                    }else{
+                        context.Response.StatusCode = 404;
+                        handleResponseString('file $repofilepath not found in [$qtype/$target]', context);	
+                    }
+                        
+                    return;
+                }catch(e:Dynamic){
+                    trace(e);
+                };
+                
 				//https://github.com/HaxeFoundation/haxe/issues/1903
 				/*
 				var ts : cs.system.threading.ThreadStart = function(){ GitHelper.parseTree(branch); };
@@ -274,14 +235,34 @@ class Index
 				thread1.Join();
 				*/
 				try{
+                    var bc:Array<String> = new Array<String>();
+                    bc.push(cast(qtype, String));
+                    bc.push(target);
+                    if(qtype == QType.BRANCH){
+                        bc.push((commitPointer == null ? 'head (${commit.Hash})' : commitPointer) + " (" + commit.CommitDate +")");
+                    }
+                    if(qtype == QType.TAG){
+                        bc.push('${commit.Hash} (${commit.CommitDate})');
+                    }
 					var t = new haxe.Template(haxe.Resource.getString("index_template"));
-					output = t.execute({filetree: GitHelper.parseTree(commit), breadcrumb: [cast(qtype, String), target]});
+					output = t.execute({filetree: GitHelper.parseTree(commit), breadcrumb: bc});
 				}catch(e:Dynamic){ 
                     trace(e); 
                 };
-			}
+			}else{
+                context.Response.StatusCode = 400;
+                handleResponseString('Bad Request, could not find commit "$commitPointer" in branch "$target"', context);
+                return;
+            }
 		}else{
 			
+            if(request.Url.LocalPath.length > 1){
+                context.Response.StatusCode = 400;
+                handleResponseString("Bad Request", context);
+                return;
+            }
+            
+            
 			var t = new haxe.Template(haxe.Resource.getString("branch_template"));
 			
 			var branches:Array<Dynamic> = new Array<Dynamic>();
@@ -291,32 +272,14 @@ class Index
 				branches.push({count: count++, name: branch, link: '${branch.Fullname}/', lastmodified: branch.CurrentCommit.AuthorDate, msg: branch.CurrentCommit.Message});
 			}
 			
-			
 			try{
 				for(tag in GetTags()){
 					branches.push({count: count++, name: tag + " " + tag.Name, link: 'refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate, msg: tag.Target.Message});
 				}
 				output = t.execute({ rows : GetBranches(), type:"brrranches", branches: branches });
-			}catch(e:Dynamic){trace(e);}
-			
-			/*
-			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.DarkRed);
-			
-			cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
-			var buf = new StringBuf();
-			buf.add("");
-	        buf.add('HttpMethod: ${request.HttpMethod}\n');
-	        buf.add('Uri: ${request.Url.AbsoluteUri}\n');
-	        buf.add('LocalPath: ${request.Url.LocalPath}\n');
-	    	var enumerator:cs.system.collections.IEnumerator = request.QueryString.Keys.GetEnumerator();
-	        while(enumerator.MoveNext()){
-				
-	            buf.add('Query:      ${enumerator.Current} = ${ request.QueryString.Get(enumerator.Current)}\n');
-
-	        }
-			buf.add(GetBranches());
-	        buf.add("");
-            */
+			}catch(e:Dynamic){
+                trace(e);
+            }
 		}
 			
 		handleResponseString(output, context);
@@ -360,5 +323,4 @@ class Index
 		
 		}catch(e:Dynamic){trace(e);};
 	}
-	
 }
