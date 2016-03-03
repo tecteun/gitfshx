@@ -3,6 +3,8 @@ import haxe.web.Dispatch;
 import cs.system.net.HttpListenerContext;
 import macros.Macros;
 import cs.StdTypes;
+import gitsharp.Branch;
+import gitsharp.Repository;
 /**
  * https://gist.github.com/textarcana/1306223 
  * https://github.com/henon/GitSharp/
@@ -14,18 +16,20 @@ abstract QType(String) {
   var BRANCH = "/refs/heads";
   var TAG = "/refs/tags";
 }
-//@:classCode("using System.Linq;\n")
+
+/**
+ * https://github.com/HaxeFoundation/HaxeManual/wiki/Haxe-C%23
+*/
 class Index
 {
 	private static inline var VERSION:String = "0.2beta";
-	private static var repo:Dynamic;
+	private static var repo:Repository;
 	static var _listener:cs.system.net.HttpListener;
 	/**
 	 * Required main starting point of our application.
 	 */
 	static function main() 
 	{
-        
 		cs.system.Console.set_BackgroundColor(cs.system.ConsoleColor.Red);
 		cs.system.Console.set_ForegroundColor(cs.system.ConsoleColor.Black);
 		trace(Macros.GetGitShortHead());
@@ -62,18 +66,17 @@ class Index
         
         
 		
-		trace(untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")"));
-		var branch:Dynamic = (untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")")); //GitSharp.Branch
-		//trace(branch.Fullname);
+		//trace(untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")"));
+		var branch:Branch = new Repository(s).Get("master");//(untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")")); //GitSharp.Branch
+		
+        //trace(branch.Fullname);
 		//var leaves:Iterator<Dynamic>= cast(branch.CurrentCommit.Tree.Leaves.Cast<());
-		trace(branch.CurrentCommit.ShortHash);
-		trace(branch.CurrentCommit.ShortHash);
 		//GitHelper.parseTree(branch);
 		
 		//branch.CurrentCommit.Tree; //upper level tree
 		//branch.CurrentCommit.Tree.Trees; //sub level level tree
 		
-		for(tree in cs.Lib.array(branch.CurrentCommit.Tree.Trees)){
+        for(tree in cs.Lib.array(cast branch.CurrentCommit.Tree.Trees)){
 		
 			trace("path: " + tree.Path + " contains " + cs.Lib.array(tree.Leaves).length + " leaves");
 			//var enumerable:cs.system.collections.IEnumerator = tree.GetHistory();
