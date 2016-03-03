@@ -49,11 +49,9 @@ class Index
       return fsubfolder == false ? sys.FileSystem.readDirectory(folder) : retval ;
     }
 	*/
-
-		var s:String = untyped __cs__("GitSharp.Repository.FindRepository(\".\")");
-		var validRepo:Bool = untyped __cs__("GitSharp.Repository.IsValid(s)");
-        if(validRepo){
-            repo = untyped __cs__("new GitSharp.Repository(s)");
+        var repoPath = Repository.FindRepository(".");
+		if(Repository.IsValid(repoPath)){
+            repo = new Repository(repoPath);
         }else{
             trace("Error: must run program in a Git repo");
             return;
@@ -63,10 +61,7 @@ class Index
 			trace(enumerator.Current);
 		}
         
-        
-		
-		//trace(untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")"));
-		var branch:Branch = new Repository(s).Get("master");//(untyped __cs__("new GitSharp.Repository(s).Get<GitSharp.Branch>(\"master\")")); //GitSharp.Branch
+        var branch:Branch = repo.Get("master");
 		
         //trace(branch.Fullname);
 		//var leaves:Iterator<Dynamic>= cast(branch.CurrentCommit.Tree.Leaves.Cast<());
@@ -190,7 +185,7 @@ class Index
 			var split = request.Url.LocalPath.substr(1).split("/");
 			var repofilepath = null, target = null;
 			var qtype:QType = null;
-            var commitPointer:String = null;
+            var commitPointer:String = "head";
 			while(split.length > 0){
 				switch(target = split.shift()){
 					
@@ -217,22 +212,41 @@ class Index
             //try getting branch or tag
             try{
                 if(null != target && target.length > 0){
-        			commit = switch(qtype){
-                        case QType.BRANCH: repo.Get(commitPointer); //cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; //repo.Get<Commit>( "979829389f136bfabb5956c68d909e7bf3092a4e");
-                        case QType.TAG: cast(repo.Tags, cs.system.collections.IDictionary).get_Item(target).Target;
-        			}
+                    if(commitPointer == "head"){
+                        var branch:Branch = repo.Get(target);
+                        commit = branch.CurrentCommit;
+                    }else{                        
+            			commit = switch(qtype){
+                            case QType.BRANCH: repo.Get(commitPointer); //cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; //repo.Get<Commit>( "979829389f136bfabb5956c68d909e7bf3092a4e");
+                            case QType.TAG: cast repo.Tags.get_Item(target).Target;
+            			}
+                    }
                 }
             }catch(e:Dynamic){
+                trace(e);
                 context.Response.StatusCode = 404;
 				handleResponseString('$qtype $target not found in repo/branch', context);
                 return;
 			};
             
             if(commit != null && repofilepath == null || repofilepath.length == 0){
+                var t = new haxe.Template(haxe.Resource.getString("commits_template"));
+                var count = 0;
+                var commits:Array<Dynamic> = new Array<Dynamic>();
                 var enumerator:cs.system.collections.IEnumerator = commit.Ancestors.GetEnumerator();
+                commits.push({count: count++, name: "HEAD", link: 'head/', lastmodified: commit.AuthorDate, msg: commit.Message});
+                
         		while(enumerator.MoveNext()){
         			trace('${enumerator.Current} ${enumerator.Current.CommitDate} ${enumerator.Current.Message} ${enumerator.Current.Hash}');
+                    commits.push({count: count++, name: enumerator.Current, link: '${enumerator.Current.Hash}/', lastmodified: enumerator.Current.AuthorDate, msg: enumerator.Current.Message});
+                    
         		}
+                try{
+                    handleResponseString(t.execute({ type:"Commits", commits: commits }), context);
+                }catch(e:Dynamic){
+                    trace(e);
+                };
+                return;
             }
             
             //try getting a requested file (if any in repofilepath)

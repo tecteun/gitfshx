@@ -10,3 +10,4 @@
 -resource favicon.ico@favicon
 -resource templates/branch_template.html@branch_template
 -resource templates/index_template.html@index_template
+-resource templates/commits_template.html@commits_template
