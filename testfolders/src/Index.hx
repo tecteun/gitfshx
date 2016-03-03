@@ -144,7 +144,7 @@ class Index
                     case "tags": qtype = QType.TAG; continue;
                     default:    if(commitPointer == null && qtype == QType.BRANCH){ 
                                     var temp = split.length > 0 ? split.shift() : ""; 
-                                    if(temp.length > 0){ commitPointer = temp; };   
+                                    if(temp.length > 0){ commitPointer = temp.toLowerCase(); };   
                                 }; 
                                 repofilepath = split.join("/");  break;
 				}
@@ -171,7 +171,7 @@ class Index
             //try getting branch or tag
             try{
                 if(null != target && target.length > 0){
-                    if(commitPointer == null && qtype == QType.BRANCH){
+                    if((commitPointer == null || commitPointer == "head") && qtype == QType.BRANCH){
                         var branch:Branch = repo.Get(target);
                         commit = branch.CurrentCommit;
                     }else{                        
@@ -187,6 +187,8 @@ class Index
 				handleResponseString('$qtype $target not found in repo/branch', context);
                 return;
 			};
+            
+            trace(target + " " + commitPointer);
             
             //list parent commits in branch/commit
             if(qtype == QType.BRANCH && commitPointer == null && commit != null && (repofilepath == null || repofilepath.length == 0)){
