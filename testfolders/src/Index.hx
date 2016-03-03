@@ -126,7 +126,7 @@ class Index
         var path = StringTools.startsWith(request.Url.LocalPath, prefix) ? request.Url.LocalPath.substr(prefix.length) : request.Url.LocalPath;
 
 		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
-		if(request.Url.LocalPath == "/favicon.ico"){
+		if(path == "/favicon.ico"){
 			handleResponse(haxe.Resource.getBytes("favicon").getData(), context, "image/x-icon");
 			return;
 		}
