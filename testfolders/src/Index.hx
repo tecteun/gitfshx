@@ -118,29 +118,35 @@ class Index
 		//startup new thread cycle
 		_listener.BeginGetContext(new cs.system.AsyncCallback(GetContextCallback), null);
 		
-		
-		var context:HttpListenerContext = _listener.EndGetContext(async_result);
-		var request = context.Request;
-		var response = context.Response;
-		var output = "";
+        cs.Lib.lock(Index, {
+		          handleAsyncRequest(async_result);
+    		
+        });
+	}
+    
+    private static function handleAsyncRequest(async_result:cs.system.IAsyncResult):Void{
+        var context:HttpListenerContext = _listener.EndGetContext(async_result);
+        var request = context.Request;
+        var response = context.Response;
+        var output = "";
         var path = StringTools.startsWith(request.Url.LocalPath, prefix) ? request.Url.LocalPath.substr(prefix.length) : request.Url.LocalPath;
 
-		trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
-		if(path == "/favicon.ico"){
-			handleResponse(haxe.Resource.getBytes("favicon").getData(), context, "image/x-icon");
-			return;
-		}
+        trace('Incoming -> ${context.Request.Url.AbsoluteUri}');
+        if(path == "/favicon.ico"){
+            handleResponse(haxe.Resource.getBytes("favicon").getData(), context, "image/x-icon");
+            return;
+        }
         
-		if(path.indexOf("/refs/") == 0){
-			var split = path.substr(1).split("/");
-			var repofilepath = null, target = null;
-			var qtype:QType = null;
+        if(path.indexOf("/refs/") == 0){
+            var split = path.substr(1).split("/");
+            var repofilepath = null, target = null;
+            var qtype:QType = null;
             var commitPointer:String = null;
             
-			while(split.length > 0){
-				switch(target = split.shift()){
-					
-					case "refs": continue;
+            while(split.length > 0){
+                switch(target = split.shift()){
+                    
+                    case "refs": continue;
                     case "heads": qtype = QType.BRANCH; continue;
                     case "tags": qtype = QType.TAG; continue;
                     default:    if(commitPointer == null && qtype == QType.BRANCH){ 
@@ -148,10 +154,10 @@ class Index
                                     if(temp.length > 0){ commitPointer = temp.toLowerCase(); };   
                                 }; 
                                 repofilepath = split.join("/");  break;
-				}
-			}
-			trace(qtype +  " " + target + " " + commitPointer);
-			trace(repofilepath);
+                }
+            }
+            trace(qtype +  " " + target + " " + commitPointer);
+            trace(repofilepath);
             
             if(null == qtype){
                 context.Response.StatusCode = 400;
@@ -166,8 +172,8 @@ class Index
                 handleResponseString("moved", context);
                 return;
             }
-			
-			var commit:Commit = null;
+            
+            var commit:Commit = null;
             
             //try getting branch or tag
             try{
@@ -176,18 +182,18 @@ class Index
                         var branch:Branch = repo.Get(target);
                         commit = branch.CurrentCommit;
                     }else{                        
-            			commit = switch(qtype){
+                        commit = switch(qtype){
                             case QType.BRANCH: repo.Get(commitPointer); //cast(repo.Branches, cs.system.collections.IDictionary).get_Item(target).CurrentCommit; //repo.Get<Commit>( "979829389f136bfabb5956c68d909e7bf3092a4e");
                             case QType.TAG: cast repo.Tags.get_Item(target).Target;
-            			}
+                        }
                     }
                 }
             }catch(e:Dynamic){
                 trace(e);
                 context.Response.StatusCode = 404;
-				handleResponseString('$qtype $target not found in repo/branch', context);
+                handleResponseString('$qtype $target not found in repo/branch', context);
                 return;
-			};
+            };
             
             trace(target + " " + commitPointer);
             
@@ -200,11 +206,11 @@ class Index
                 commits.push({count: count++, name: 'HEAD[${commit.ShortHash}]', link: 'head/', lastmodified: commit.AuthorDate, msg: commit.Message});
                 trace(repofilepath);
                 trace(repofilepath.length);
-        		while(enumerator.MoveNext()){
-        			trace('${enumerator.Current} ${enumerator.Current.CommitDate} ${enumerator.Current.Message} ${enumerator.Current.Hash}');
+                while(enumerator.MoveNext()){
+                    trace('${enumerator.Current} ${enumerator.Current.CommitDate} ${enumerator.Current.Message} ${enumerator.Current.Hash}');
                     commits.push({count: count++, name: enumerator.Current, link: '${enumerator.Current.Hash}/', lastmodified: enumerator.Current.AuthorDate, msg: enumerator.Current.Message});
                     
-        		}
+                }
                 try{
                     handleResponseString(t.execute({ type:"Commits", commits: commits }), context);
                 }catch(e:Dynamic){
@@ -213,7 +219,7 @@ class Index
                 return;
             }
             
-			if(null != commit){
+            if(null != commit){
                 //try getting a requested file (if any in repofilepath)
                 try{
                     var leaf:Dynamic = untyped __cs__("(commit as GitSharp.Commit).Tree[repofilepath];"); //these array accessors cannot work with haxe?
@@ -230,14 +236,14 @@ class Index
                     trace(e);
                 };
                 
-				//https://github.com/HaxeFoundation/haxe/issues/1903
-				/*
-				var ts : cs.system.threading.ThreadStart = function(){ GitHelper.parseTree(branch); };
-				var thread1 = new cs.system.threading.Thread(ts);
-				thread1.Start();	
-				thread1.Join();
-				*/
-				try{
+                //https://github.com/HaxeFoundation/haxe/issues/1903
+                /*
+                var ts : cs.system.threading.ThreadStart = function(){ GitHelper.parseTree(branch); };
+                var thread1 = new cs.system.threading.Thread(ts);
+                thread1.Start();	
+                thread1.Join();
+                */
+                try{
                     var bc:Array<String> = new Array<String>();
                     bc.push(cast(qtype, String));
                     bc.push(target);
@@ -247,43 +253,44 @@ class Index
                     if(qtype == QType.TAG){
                         bc.push('${commit.Hash} (${commit.CommitDate})');
                     }
-					var t = new haxe.Template(haxe.Resource.getString("index_template"));
-					output = t.execute({filetree: GitHelper.parseTree(commit), breadcrumb: bc});
-				}catch(e:Dynamic){ 
+                    var t = new haxe.Template(haxe.Resource.getString("index_template"));
+                    output = t.execute({filetree: GitHelper.parseTree(commit), breadcrumb: bc});
+                }catch(e:Dynamic){ 
                     trace(e); 
                 };
-			}else{
+            }else{
                 context.Response.StatusCode = 400;
                 handleResponseString('Bad Request, could not find commit "$commitPointer" in branch "$target"', context);
                 return;
             }
-		}else{
-			
+        }else{
+            
             if(path.length > 1){
                 context.Response.StatusCode = 400;
                 handleResponseString("Bad Request", context);
                 return;
             }
             
-			try{
-    			var t = new haxe.Template(haxe.Resource.getString("branch_template"));
-    			var branches:Array<Dynamic> = new Array<Dynamic>();
-    			var count = 1;
+            try{
+                var t = new haxe.Template(haxe.Resource.getString("branch_template"));
+                var branches:Array<Dynamic> = new Array<Dynamic>();
+                var count = 1;
                 
                 for(branch in GetBranches()){
                     branches.push({count: count++, name: branch, link: prefix + '/${branch.Fullname}/', lastmodified: branch.CurrentCommit.AuthorDate, msg: branch.CurrentCommit.Message});
                 }
-				for(tag in GetTags()){
-					branches.push({count: count++, name: tag + " " + tag.Name, link: prefix + '/refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate, msg: tag.Target.Message});
-				}
-				output = t.execute({ rows : GetBranches(), type:"Branch/Tag index:", branches: branches });
-			}catch(e:Dynamic){
+                for(tag in GetTags()){
+                    branches.push({count: count++, name: tag + " " + tag.Name, link: prefix + '/refs/tags/${tag.Name}/', lastmodified: tag.Target.AuthorDate, msg: tag.Target.Message});
+                }
+                output = t.execute({ rows : GetBranches(), type:"Branch/Tag index:", branches: branches });
+            }catch(e:Dynamic){
                 trace(e);
-            }
-		}
-			
-		handleResponseString(output, context);
-	}
+            }                
+            
+        }
+            
+        handleResponseString(output, context);
+    }
 	
     private static function handleResponseLeaf(leaf:Dynamic, context:HttpListenerContext, ?UTF8:Bool = true){
         handleResponse(UTF8 ? cs.system.text.Encoding.UTF8.GetBytes(cast(leaf.Data, String)) : leaf.RawData, context, Util.getMimeType(leaf.Path));
@@ -295,8 +302,10 @@ class Index
 	
 	private static function handleResponse(buffer:cs.NativeArray<UInt8>, context:HttpListenerContext, mimeType:String):Void {
 		try{
+            
 			var response = context.Response, request = context.Request;
-			if(request.Headers.Get("Accept-Encoding").indexOf("gzip") > -1){
+            var encodingHeader = request.Headers.Get("Accept-Encoding");
+			if(null != encodingHeader && encodingHeader.indexOf("gzip") > -1){
 				var ms:cs.system.io.MemoryStream = new cs.system.io.MemoryStream();
 				var zip = new cs.system.io.compression.GZipStream(ms, cs.system.io.compression.CompressionMode.Compress);
 				var oldSize = buffer.Length;
