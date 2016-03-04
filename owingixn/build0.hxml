@@ -1,5 +1,5 @@
 #-lib wtri
--D net-ver=45
+-D net-ver=40
 -D dll
 -cs output
 -cp src
