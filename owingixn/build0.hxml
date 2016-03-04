@@ -1,0 +1,11 @@
+#-lib wtri
+-D net-ver=45
+-D dll
+-cs output
+-cp src
+-main Startup
+#include dependant libs
+-net-lib Owin.dll
+-net-lib Microsoft.Owin.dll
+-net-lib Microsoft.Owin.Host.SystemWeb.dll
+-net-lib Microsoft.Owin.Hosting.dll
