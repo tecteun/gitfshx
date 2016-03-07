@@ -13,13 +13,13 @@ class Startup {
 	{
         
         //owin.IAppBuilder
-        //microsoft.owin.hosting.WebApp.Start("http://localhost:4242", Configuration);
-        //cs.system.Console.ReadLine();
+        microsoft.owin.hosting.WebApp.Start("http://localhost:4242", Configuration);
+        cs.system.Console.ReadLine();
         
     }
     
     @:final
-    public function Configuration(appBuilder:owin.IAppBuilder):Void {
+    public static function Configuration(appBuilder:owin.IAppBuilder):Void {
         
         var func:cs.system.Func_2<AppFunc, AppFunc> = BasicAuthenticationMiddleware;
         appBuilder.Use(func, new cs.NativeArray(0)); 
@@ -27,7 +27,7 @@ class Startup {
         microsoft.owin.extensions.IntegratedPipelineExtensions.UseStageMarker(appBuilder, owin.PipelineStage.MapHandler);
     }
     
-    private function BasicAuthenticationMiddleware(next:AppFunc):AppFunc
+    private static function BasicAuthenticationMiddleware(next:AppFunc):AppFunc
     {
        return function(context:cs.system.collections.generic.IDictionary_2<String, Dynamic>){ 
            trace(context.get_Item("owin.RequestPath"));
@@ -35,7 +35,7 @@ class Startup {
            writer.Write("aap");
            writer.Close();
            cs.system.threading.Thread.Sleep(100);
-           return new cs.system.threading.tasks.Task(cast next.Invoke(context));
+           return null;//new cs.system.threading.tasks.Task(cast next.Invoke(context));
        };
     }
     

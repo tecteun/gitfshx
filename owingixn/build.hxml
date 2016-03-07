@@ -1,8 +1,11 @@
 #-lib wtri
 -D net-ver=40
+
 -cs output
 -cp src
--main Gixen
+-main Startup
 #include dependant libs
 -net-lib Owin.dll
+-net-lib Microsoft.Owin.dll
+-net-lib Microsoft.Owin.Host.HttpListener.dll
 -net-lib Microsoft.Owin.Hosting.dll

@@ -4,6 +4,7 @@ typedef AppFunc = cs.system.Func_2<cs.system.collections.generic.IDictionary_2<S
     https://coding.abel.nu/2014/05/whats-this-owin-stuff-about/
     https://github.com/AndersAbel/OwinSelfHostTest/blob/master/OwinSelfHostExpanded/Handler.cs
  */
+@:classCode("[assembly: OwinStartup(typeof(Startup))]\n")
 class Gixen {
     
     static function main() 
