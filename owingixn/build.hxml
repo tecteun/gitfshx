@@ -3,9 +3,9 @@
 
 -cs output
 -cp src
--main Startup
+-main Gixen
 #include dependant libs
--net-lib Owin.dll
--net-lib Microsoft.Owin.dll
--net-lib Microsoft.Owin.Host.HttpListener.dll
--net-lib Microsoft.Owin.Hosting.dll
+-net-lib lib/Owin.dll
+-net-lib lib/Microsoft.Owin.dll
+-net-lib lib/Microsoft.Owin.Host.HttpListener.dll
+-net-lib lib/Microsoft.Owin.Hosting.dll

@@ -1,11 +1,12 @@
 #-lib wtri
 -D net-ver=40
 -D dll
+-D arch=anycpu
 -cs output
 -cp src
--main Startup
+-main Gixen
 #include dependant libs
--net-lib Owin.dll
--net-lib Microsoft.Owin.dll
--net-lib Microsoft.Owin.Host.SystemWeb.dll
--net-lib Microsoft.Owin.Hosting.dll
+-net-lib lib/Owin.dll
+-net-lib lib/Microsoft.Owin.dll
+-net-lib lib/Microsoft.Owin.Host.SystemWeb.dll
+-net-lib lib/Microsoft.Owin.Hosting.dll
