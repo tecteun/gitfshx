@@ -18,13 +18,13 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
     @:final
     public static function Configuration(appBuilder:owin.IAppBuilder):Void {
         
-        var func:cs.system.Func_2<AppFunc, AppFunc> = BasicAuthenticationMiddleware;
+        var func:cs.system.Func_2<AppFunc, AppFunc> = BasicMiddleware;
         appBuilder.Use(func, new cs.NativeArray(0)); 
         
         microsoft.owin.extensions.IntegratedPipelineExtensions.UseStageMarker(appBuilder, owin.PipelineStage.MapHandler);
     }
     
-    private static function BasicAuthenticationMiddleware(next:AppFunc):AppFunc
+    private static function BasicMiddleware(next:AppFunc):AppFunc
     {
         
        return function(context:cs.system.collections.generic.IDictionary_2<String, Dynamic>){ 
