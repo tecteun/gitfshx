@@ -25,19 +25,18 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
     
     @:final
     public static function Configuration(appBuilder:owin.IAppBuilder):Void {
+        fp = sys.io.File.append(cs.system.AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "/log.txt", false);
+        log('Configuration-> start ${cs.system.AppDomain.CurrentDomain.SetupInformation.ApplicationName}');
         
         var func:cs.system.Func_2<AppFunc, AppFunc> = BasicMiddleware;
         appBuilder.Use(func, new cs.NativeArray(0)); 
-        
-        fp = sys.io.File.append(cs.system.AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "/log.txt", false);
-        
-         log("start");
         microsoft.owin.extensions.IntegratedPipelineExtensions.UseStageMarker(appBuilder, owin.PipelineStage.MapHandler);
     }
     
     private static function BasicMiddleware(next:AppFunc):AppFunc
     {
-            cs.system.threading.Thread.Sleep(1000);
+        cs.system.threading.Thread.Sleep(1000);
+        
         return function(context:cs.system.collections.generic.IDictionary_2<String, Dynamic>):cs.system.threading.tasks.Task{ 
             log(context.get_Item("owin.RequestPath"));
             var stream = cast(context.get_Item("owin.ResponseBody"), cs.system.io.Stream);
@@ -48,17 +47,11 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
             context.set_Item("owin.ResponseStatusCode", 200);
             headers.set_Item("Content-Length", cs.NativeArray.make(Std.string(buffer.Length)));
             headers.set_Item("Content-Type", cs.NativeArray.make("text/plain"));
-    
-        
             
             var tf = new cs.system.threading.tasks.TaskFactory();
-            
             //using native haxe this gives: ambigous overload, possibly due to types of stream.BeginWrite
             return untyped __cs__("tf.FromAsync(stream.BeginWrite, stream.EndWrite, buffer, 0, buffer.Length, null, System.Threading.Tasks.TaskCreationOptions.AttachedToParent);");
-            // var task:cs.system.threading.tasks.Task_1<Void> = t.StartNew(cast(function(){next.Invoke(context); }, cs.system.Func_1<Dynamic>));
-            //no need to pass it down the chain here, there is no chain (yet)
-            //return next.Invoke(context);
-            //return task; 
+
        };
     }
     
