@@ -26,7 +26,7 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
     }
     
     private static function log(s:String){
-        fp.writeString(s + "\n\r");
+        fp.writeString(s + cs.system.Environment.NewLine);
         fp.flush();
     }
     
@@ -39,6 +39,7 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
         //bootstrap owin
         var func:cs.system.Func_2<AppFunc, AppFunc> = BasicMiddleware;
         appBuilder.Use(func, new cs.NativeArray(0)); 
+        
         microsoft.owin.extensions.IntegratedPipelineExtensions.UseStageMarker(appBuilder, owin.PipelineStage.MapHandler);
     }
     
@@ -60,12 +61,12 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
                 cs.system.threading.Thread.Sleep(1000);
                 stream.Write(buffer, 0, buffer.Length);
                 stream.Flush();
-                stream.Close();
-                next.Invoke(context);
+                //stream.Close();                
             };
+            var task = taskFactory.StartNew(new cs.system.Action(func)).ContinueWith(new cs.system.Action_1<cs.system.threading.tasks.Task>(function(previous){ next.Invoke(context); }));
             
             //var task:cs.system.threading.tasks.Task = untyped __cs__("tf.FromAsync(stream.BeginWrite, stream.EndWrite, buffer, 0, buffer.Length, null, System.Threading.Tasks.TaskCreationOptions.AttachedToParent);");
-            return taskFactory.StartNew(new cs.system.Action(func));
+            return task;//taskFactory.StartNew(new cs.system.Action(function(){ next.Invoke(context); }));
        };
     }
     
