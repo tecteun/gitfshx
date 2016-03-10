@@ -15,6 +15,7 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
     static function main() 
 	{
         init();
+        //bootstrap owin standalone webapp.
         microsoft.owin.hosting.WebApp.Start("http://localhost:4242", Configuration);
         cs.system.Console.ReadLine();
 
@@ -35,6 +36,7 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
         fp = sys.io.File.append(cs.system.AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "/log.txt", false);
         log('Configuration-> start ${cs.system.AppDomain.CurrentDomain.SetupInformation.ApplicationName}');
         
+        //bootstrap owin
         var func:cs.system.Func_2<AppFunc, AppFunc> = BasicMiddleware;
         appBuilder.Use(func, new cs.NativeArray(0)); 
         microsoft.owin.extensions.IntegratedPipelineExtensions.UseStageMarker(appBuilder, owin.PipelineStage.MapHandler);
@@ -44,10 +46,9 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
     {
         return function(context:cs.system.collections.generic.IDictionary_2<String, Dynamic>):cs.system.threading.tasks.Task{ 
             var date = Date.now().getTime();
-            log(context.get_Item("owin.RequestPath"));
-            var stream = cast(context.get_Item("owin.ResponseBody"), cs.system.io.Stream);
-            var headers:cs.system.collections.generic.IDictionary_2<String, cs.NativeArray<String>> = cast context.get_Item("owin.ResponseHeaders");
-            headers.set_Item("Content-Length", cs.NativeArray.make(Std.string(0)));
+            var stream:cs.system.io.Stream = context.get_Item("owin.ResponseBody");
+            var headers:cs.system.collections.generic.IDictionary_2<String, cs.NativeArray<String>> = context.get_Item("owin.ResponseHeaders");
+            //headers.set_Item("Content-Length", cs.NativeArray.make(Std.string(0)));
 
             var buffer:cs.NativeArray<cs.StdTypes.UInt8> = cs.system.text.Encoding.UTF8.GetBytes("Hello world! " + context.get_Item("owin.RequestPath") + " " + date);
             context.set_Item("owin.ResponseStatusCode", 200);
@@ -64,7 +65,7 @@ class Gixen { //optionally use class: Startup, to use owin default Startup.Confi
             };
             
             //var task:cs.system.threading.tasks.Task = untyped __cs__("tf.FromAsync(stream.BeginWrite, stream.EndWrite, buffer, 0, buffer.Length, null, System.Threading.Tasks.TaskCreationOptions.AttachedToParent);");
-            return taskFactory.StartNew( new cs.system.Action(func));
+            return taskFactory.StartNew(new cs.system.Action(func));
        };
     }
     
